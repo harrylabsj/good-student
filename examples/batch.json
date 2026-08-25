@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "image",
+    "source_ref": "example-wrong-book-2026-08-23",
+    "page_count": 3
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {"value": "数学", "confidence": 0.98},
+      "grade": {"value": "五年级", "confidence": 0.72},
+      "question_text": "计算：3/4 + 1/6 = ?",
+      "student_answer": "4/10",
+      "correct_answer": "11/12",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "异分母分数加法", "confidence": 0.9}],
+      "error_reason_candidates": [{"code": "concept_gap", "confidence": 0.7}],
+      "extraction_confidence": 0.92,
+      "needs_confirmation": true,
+      "uncertain_fields": ["grade"]
+    },
+    {
+      "source_locator": "page-1-question-5",
+      "subject": {"value": "数学", "confidence": 0.97},
+      "grade": {"value": "五年级", "confidence": 0.7},
+      "question_text": "一桶油重 3/4 千克，用去 1/3 后还剩多少千克？",
+      "student_answer": "1/2",
+      "correct_answer": "1/2 千克",
+      "is_wrong": false,
+      "knowledge_candidates": [{"label": "分数应用题", "confidence": 0.86}],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.88,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-2-question-1",
+      "subject": {"value": "语文", "confidence": 0.95},
+      "grade": {"value": "五年级", "confidence": 0.7},
+      "question_text": "写出下列词语的近义词：安静（　　）",
+      "student_answer": "吵闹",
+      "correct_answer": "宁静",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "近义词", "confidence": 0.8}],
+      "error_reason_candidates": [{"code": "concept_gap", "confidence": 0.6}],
+      "extraction_confidence": 0.85,
+      "needs_confirmation": true,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-3-question-3",
+      "subject": {"value": "英语", "confidence": 0.96},
+      "grade": {"value": "五年级", "confidence": 0.7},
+      "question_text": "用所给词的适当形式填空：He _____ (go) to school yesterday.",
+      "student_answer": "goes",
+      "correct_answer": "went",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "一般过去时", "confidence": 0.88}],
+      "error_reason_candidates": [{"code": "memory", "confidence": 0.65}],
+      "extraction_confidence": 0.9,
+      "needs_confirmation": true,
+      "uncertain_fields": ["error_reason_candidates"]
+    }
+  ],
+  "warnings": []
+}

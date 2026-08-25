@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "good-student/candidate-wrong-question-batch/v1",
+  "title": "CandidateWrongQuestionBatch",
+  "description": "宿主模型或人工录入产生的错题候选批次。模型输出只是候选，确认前不得写入学生画像。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source", "questions"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_type", "source_ref"],
+      "properties": {
+        "source_type": {
+          "enum": ["image", "pdf", "text", "markdown", "csv", "json"]
+        },
+        "source_ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "page_count": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/question" }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "type": "string", "maxLength": 500 }
+    }
+  },
+  "$defs": {
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "field_with_confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+    "label_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+    "reason_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code"],
+      "properties": {
+        "code": {
+          "enum": [
+            "concept_gap",
+            "procedure_gap",
+            "misread",
+            "calculation",
+            "memory",
+            "careless_checking",
+            "unknown"
+          ]
+        },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_locator", "question_text", "is_wrong"],
+      "properties": {
+        "source_locator": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "subject": { "$ref": "#/$defs/field_with_confidence" },
+        "grade": { "$ref": "#/$defs/field_with_confidence" },
+        "question_text": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "student_answer": { "type": ["string", "null"], "maxLength": 8000 },
+        "correct_answer": { "type": ["string", "null"], "maxLength": 8000 },
+        "is_wrong": { "type": "boolean" },
+        "knowledge_candidates": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/label_candidate" }
+        },
+        "error_reason_candidates": {
+          "type": "array",
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/reason_candidate" }
+        },
+        "extraction_confidence": { "$ref": "#/$defs/confidence" },
+        "needs_confirmation": { "type": "boolean" },
+        "uncertain_fields": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "enum": [
+              "subject",
+              "grade",
+              "question_text",
+              "student_answer",
+              "correct_answer",
+              "is_wrong",
+              "knowledge_candidates",
+              "error_reason_candidates"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

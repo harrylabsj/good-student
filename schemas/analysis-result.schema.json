@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "good-student/analysis-result/v1",
+  "title": "AnalysisResult",
+  "description": "确定性核心输出的结构化分析结果。只包含错误集中度与疑似薄弱点判断，不包含精确掌握率。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "student",
+    "generated_at",
+    "model_version",
+    "weaknesses",
+    "subjects",
+    "summary",
+    "caveats"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "student": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string" },
+        "display_name": { "type": ["string", "null"] },
+        "grade": { "type": ["string", "null"] }
+      }
+    },
+    "generated_at": { "type": "string" },
+    "model_version": { "type": "string" },
+    "weaknesses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "knowledge_component",
+          "status",
+          "risk_level",
+          "confidence_level",
+          "evidence_count",
+          "evidence",
+          "reassessments",
+          "reason_codes",
+          "last_error_at",
+          "last_success_at",
+          "next_review_at"
+        ],
+        "properties": {
+          "knowledge_component": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "canonical_name", "subject_id", "is_custom"],
+            "properties": {
+              "id": { "type": "string" },
+              "canonical_name": { "type": "string" },
+              "subject_id": { "type": "string" },
+              "is_custom": { "type": "boolean" }
+            }
+          },
+          "status": {
+            "enum": [
+              "insufficient_evidence",
+              "suspected_weakness",
+              "evidenced_weakness",
+              "improving",
+              "mastered",
+              "review_due"
+            ]
+          },
+          "risk_level": { "enum": ["low", "medium", "high"] },
+          "confidence_level": { "enum": ["low", "medium", "high"] },
+          "evidence_count": { "type": "integer", "minimum": 0 },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["attempt_id", "attempted_at", "source_ref", "confirmed", "is_correct"],
+              "properties": {
+                "attempt_id": { "type": "string" },
+                "attempted_at": { "type": "string" },
+                "source_ref": { "type": ["string", "null"] },
+                "confirmed": { "const": true },
+                "is_correct": { "type": "boolean" },
+                "question_excerpt": { "type": ["string", "null"], "maxLength": 120 }
+              }
+            }
+          },
+          "reassessments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "completed_at", "passed", "is_new_variant", "no_hints"],
+              "properties": {
+                "id": { "type": "string" },
+                "completed_at": { "type": "string" },
+                "passed": { "type": "boolean" },
+                "is_new_variant": { "type": "boolean" },
+                "no_hints": { "type": "boolean" }
+              }
+            }
+          },
+          "reason_codes": { "type": "array", "items": { "type": "string" } },
+          "last_error_at": { "type": ["string", "null"] },
+          "last_success_at": { "type": ["string", "null"] },
+          "next_review_at": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject_id", "wrong_attempt_count", "knowledge_components"],
+        "properties": {
+          "subject_id": { "type": "string" },
+          "wrong_attempt_count": { "type": "integer", "minimum": 0 },
+          "knowledge_components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "canonical_name", "wrong_count", "concentration"],
+              "properties": {
+                "id": { "type": "string" },
+                "canonical_name": { "type": "string" },
+                "wrong_count": { "type": "integer", "minimum": 0 },
+                "concentration": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_weaknesses", "by_status", "low_confidence_count"],
+      "properties": {
+        "total_weaknesses": { "type": "integer", "minimum": 0 },
+        "by_status": { "type": "object" },
+        "low_confidence_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "caveats": { "type": "array", "items": { "type": "string" } }
+  }
+}
