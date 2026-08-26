@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/mixed-subjects-ce",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "语文",
+        "confidence": 0.96
+      },
+      "question_text": "解释词语：不言而喻。",
+      "student_answer": "不能说话",
+      "correct_answer": "不用说就可以明白，形容道理很明显",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "成语理解",
+          "confidence": 0.93
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.93,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.97
+      },
+      "question_text": "选择：I have ___ apple and ___ orange. A. a, an B. an, a C. an, an",
+      "student_answer": "B",
+      "correct_answer": "C",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "不定冠词",
+          "confidence": 0.94
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.94,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-footer-note",
+      "subject": {
+        "value": "语文",
+        "confidence": 0.43
+      },
+      "question_text": "下次作业请把错题抄进错题本。",
+      "student_answer": null,
+      "correct_answer": null,
+      "is_wrong": false,
+      "knowledge_candidates": [],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.4,
+      "needs_confirmation": true,
+      "uncertain_fields": [
+        "subject",
+        "question_text"
+      ]
+    }
+  ],
+  "warnings": [
+    "page-1-footer-note 疑似页脚提示，置信度低，待人工确认是否为题目。"
+  ]
+}

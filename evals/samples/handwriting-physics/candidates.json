@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/handwriting-physics",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "物理",
+        "confidence": 0.83
+      },
+      "question_text": "光在真空中的传播速度约为 ___ m/s。",
+      "student_answer": "3×10^8",
+      "correct_answer": "3×10^8",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "光速",
+          "confidence": 0.8
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.8,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "物理",
+        "confidence": 0.81
+      },
+      "question_text": "一节干电池的电压是 1.5 V，三节串联后总电压是多少？",
+      "student_answer": "1.5 V",
+      "correct_answer": "4.5 V",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "串联电路电压",
+          "confidence": 0.78
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.78,
+      "needs_confirmation": true,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

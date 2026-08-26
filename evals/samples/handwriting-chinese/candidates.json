@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/handwriting-chinese",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "语文",
+        "confidence": 0.71
+      },
+      "question_text": "看拼音写词语：jīng yíng",
+      "student_answer": "晶萤",
+      "correct_answer": "晶莹",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "字形",
+          "confidence": 0.68
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.68,
+      "needs_confirmation": true,
+      "uncertain_fields": [
+        "student_answer"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "语文",
+        "confidence": 0.87
+      },
+      "question_text": "写出“骄傲”的反义词。",
+      "student_answer": "谦虚",
+      "correct_answer": "谦虚",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "反义词",
+          "confidence": 0.84
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.84,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": {
+        "value": "语文",
+        "confidence": 0.83
+      },
+      "question_text": "判断：“《草船借箭》出自《三国演义》。”这句话是否正确？",
+      "student_answer": "错误",
+      "correct_answer": "正确",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "文学常识",
+          "confidence": 0.8
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.8,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

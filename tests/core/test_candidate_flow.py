@@ -39,13 +39,17 @@ def test_duplicate_ingest_returns_existing_and_diff(service):
 
 def test_expired_candidates_not_pending_and_not_confirmable(service):
     student = make_student(service)
-    service.ingest_candidates(student, make_batch([make_question()]), ttl_hours=-1)
+    service.ingest_candidates(student, make_batch([make_question()]))
+    # 直接把候选置为已过期（模拟 24h 未确认），不依赖负 ttl（L7 已禁止负值）
+    with service.store.tx():
+        service.store._conn.execute(
+            "UPDATE candidates SET expires_at = '2000-01-01T00:00:00+00:00' WHERE student_id = ?",
+            (student,),
+        )
     listing = service.list_pending(student)
     assert listing["data"]["pending"] == []
     assert listing["data"]["expired_now"] == 1
 
-    expired_id = service.store.pending_candidates(student)  # 空
-    assert expired_id == []
     row = service.store._conn.execute("SELECT id, status FROM candidates").fetchone()
     resp = service.confirm_questions(student, [{"candidate_id": row["id"], "action": "confirm"}])
     assert resp["ok"]
@@ -171,3 +175,47 @@ def test_correct_question_confirmed_is_success_not_weakness(service):
     ingest_and_confirm(service, student, [make_question(is_wrong=False)])
     result = service.analyze(student)["data"]
     assert result["weaknesses"] == []
+
+
+# ---- M3：confirm edits 类型校验（宿主模型传候选结构 dict 时给明确错误）----
+
+
+def test_confirm_edits_subject_dict_returns_invalid_argument(service):
+    """M3：edits.subject 按候选 payload 的 {value,confidence} 结构传 dict 时，
+    应给 invalid_argument，而不是误导性的 persistence_error。"""
+    student = make_student(service)
+    service.ingest_candidates(student, make_batch([make_question()]))  # 先入库不确认，留下 pending
+    pending = service.list_pending(student)["data"]["pending"]
+    resp = service.confirm_questions(
+        student,
+        [{"candidate_id": pending[0]["candidate_id"], "action": "confirm", "edits": {"subject": {"value": "数学"}}}],
+    )
+    assert resp["ok"] is True  # 单条失败走 data.failed，不炸 envelope
+    assert resp["data"]["applied"] == []
+    assert len(resp["data"]["failed"]) == 1
+    assert resp["data"]["failed"][0]["code"] == "invalid_argument"
+    assert "字符串" in resp["data"]["failed"][0]["message"]
+
+
+def test_confirm_edits_attempted_at_weird_type_fails_cleanly(service):
+    student = make_student(service)
+    service.ingest_candidates(student, make_batch([make_question()]))
+    pending = service.list_pending(student)["data"]["pending"]
+    resp = service.confirm_questions(
+        student,
+        [{"candidate_id": pending[0]["candidate_id"], "action": "confirm", "edits": {"attempted_at": 12345}}],
+    )
+    assert resp["ok"] is True
+    assert len(resp["data"]["failed"]) == 1
+    assert resp["data"]["failed"][0]["code"] == "invalid_argument"
+
+
+def test_ingest_ttl_hours_out_of_range_rejected(service):
+    """L7：ttl_hours 越界（0 / 超长）应给 invalid_argument，而不是预过期/永不过期。"""
+    student = make_student(service)
+    resp = service.ingest_candidates(student, make_batch([make_question(locator="q1")]), ttl_hours=0)
+    assert resp["ok"] is False
+    assert resp["error"]["code"] == "invalid_argument"
+    resp2 = service.ingest_candidates(student, make_batch([make_question(locator="q2")]), ttl_hours=24 * 365 + 1)
+    assert resp2["ok"] is False
+    assert resp2["error"]["code"] == "invalid_argument"

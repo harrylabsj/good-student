@@ -5,8 +5,6 @@ from collections.abc import Callable
 
 Migrator = Callable[[sqlite3.Connection], None]
 
-SCHEMA_VERSION_LATEST = 1
-
 _DDL_V1: list[str] = [
     """
     CREATE TABLE students(
@@ -168,7 +166,33 @@ def _v1(conn: sqlite3.Connection) -> None:
         conn.execute(ddl)
 
 
-MIGRATIONS: list[tuple[int, Migrator]] = [(1, _v1)]
+# v2：旧数据迁移器（设计 §22）的 legacy 证据表。整场分数只进科目概览证据，
+# 绝不写 attempts，因此不生成题目级掌握结论。
+_DDL_V2: list[str] = [
+    """
+    CREATE TABLE legacy_records(
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      record_type TEXT NOT NULL,
+      subject TEXT NOT NULL DEFAULT '',
+      title TEXT NOT NULL DEFAULT '',
+      record_date TEXT NOT NULL DEFAULT '',
+      payload TEXT NOT NULL,
+      migrated_at TEXT NOT NULL
+    )
+    """,
+    "CREATE INDEX idx_legacy_records_student ON legacy_records(student_id, record_type)",
+]
+
+
+def _v2(conn: sqlite3.Connection) -> None:
+    for ddl in _DDL_V2:
+        conn.execute(ddl)
+
+
+MIGRATIONS: list[tuple[int, Migrator]] = [(1, _v1), (2, _v2)]
+
+SCHEMA_VERSION_LATEST = 2
 
 
 def current_version(conn: sqlite3.Connection) -> int:

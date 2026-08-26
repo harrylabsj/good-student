@@ -86,3 +86,31 @@ def test_two_services_share_dir(tmp_path):
     finally:
         s1.close()
         s2.close()
+
+
+def test_cross_thread_access(tmp_path):
+    # M1 真机验收缺陷回归：Hermes 在非注册线程执行工具处理器，
+    # 单连接触发 sqlite3 线程亲和错误；连接应按线程隔离。
+    import threading
+
+    store = Store(tmp_path)
+    errors: list[BaseException] = []
+
+    def work(name: str) -> None:
+        try:
+            with store.tx():
+                store.insert_student(name, None, [], [])
+            store.list_students()
+        except BaseException as exc:  # noqa: BLE001 — 收集线程内所有失败
+            errors.append(exc)
+
+    threads = [threading.Thread(target=work, args=(f"线程学生{i}",)) for i in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    try:
+        assert errors == []
+        assert len(store.list_students()) == 4
+    finally:
+        store.close()

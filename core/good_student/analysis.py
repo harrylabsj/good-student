@@ -68,8 +68,18 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
             source_refs[source_id] = source["source_ref"] if source else None
         return source_refs[source_id]
 
+    # 遍历的 KC 集合 = 有错题证据的 KC ∪ 存在独立复测失败证据的 KC（M1）。
+    # 后者即使从未在错题中出现（如正确作答被标记知识点后独立复测未通过），
+    # 复测失败也是确认过的薄弱信号，必须可见，不能静默丢弃。
+    weakness_kc_ids = set(wrongs_by_kc) | {
+        kc_id
+        for kc_id, rass in rass_by_kc.items()
+        if any(_is_independent(r) and not _passed(r) for r in rass)
+    }
+
     weaknesses = []
-    for kc_id, wrongs in wrongs_by_kc.items():
+    for kc_id in sorted(weakness_kc_ids):
+        wrongs = wrongs_by_kc.get(kc_id, [])
         link = kc_by_id[kc_id]
         rass = rass_by_kc.get(kc_id, [])
         independent = [r for r in rass if _is_independent(r)]
@@ -78,7 +88,7 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
         status = WeaknessStatus.SUSPECTED.value
         risk = "low"
         confidence = "low"
-        reasons = ["single_error" if len(wrongs) == 1 else "multiple_errors"]
+        reasons = ["single_error" if len(wrongs) == 1 else "multiple_errors"] if wrongs else []
         next_review_at: str | None = None
 
         distinct_sources = {w["source_id"] for w in wrongs}

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "mixed_subjects",
+    "subjects": [
+      "语文",
+      "英语"
+    ],
+    "note": "合成样本：同页混合科目（语文+英语）。候选多出 1 条误题（把页脚提示当成题目），用于验证误题率统计。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "语文",
+      "question_text": "解释词语：不言而喻。",
+      "student_answer": "不能说话",
+      "correct_answer": "不用说就可以明白，形容道理很明显",
+      "is_wrong": true,
+      "knowledge": [
+        "成语理解"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "英语",
+      "question_text": "选择：I have ___ apple and ___ orange. A. a, an B. an, a C. an, an",
+      "student_answer": "B",
+      "correct_answer": "C",
+      "is_wrong": true,
+      "knowledge": [
+        "不定冠词"
+      ]
+    }
+  ]
+}

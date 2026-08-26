@@ -1,0 +1,14 @@
+【合成占位材料 / synthetic placeholder — 非真实学生材料】
+第 1 页（同页混合两科）
+
+数学
+1. 解方程：2x + 5 = 17
+   学生答案：x = 5
+   标准答案：x = 6
+   批改：×
+
+英语
+2. 用所给词的适当形式填空：She ___ (go) to school by bus every day.
+   学生答案：go
+   标准答案：goes
+   批改：×

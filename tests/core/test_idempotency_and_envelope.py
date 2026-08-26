@@ -1,4 +1,5 @@
-from conftest import make_batch, make_question, make_student
+import pytest
+from conftest import ingest_and_confirm, make_batch, make_question, make_student
 from good_student.validation import validate
 
 
@@ -48,3 +49,47 @@ def test_error_envelope_shape(service):
     assert resp["data"] is None
     assert resp["error"]["code"] == "not_found"
     assert resp["trace_id"]
+
+
+# ---- M2：envelope 兜底内部异常 + 事务任意异常回滚 ----
+
+
+def test_internal_error_returns_envelope(service, monkeypatch):
+    """M2：未知内部异常降级为 internal_error envelope，不击穿宿主工具循环。"""
+    import good_student.service as svc_mod
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(svc_mod.analysis, "analyze_student", boom)
+    student = make_student(service)
+    ingest_and_confirm(service, student, [make_question()])
+    resp = service.analyze(student)
+    assert_envelope(resp)
+    assert resp["ok"] is False
+    assert resp["error"]["code"] == "internal_error"
+    assert "boom" in resp["error"]["message"]
+
+
+def test_tx_rolls_back_on_generic_exception(service):
+    """M2：事务内任意异常都回滚，不残留未提交写入污染后续操作。"""
+    with pytest.raises(ValueError):
+        with service.store.tx():
+            student = service.store.insert_student("回滚测试", "五年级", [], [])
+            raise ValueError("boom")
+    assert service.store.get_student(student["id"]) is None
+    # 后续事务仍可用
+    resp = service.create_student("小明", grade="五年级")
+    assert resp["ok"]
+
+
+def test_self_reported_confidence_type_checked(service):
+    """M2：self_reported_confidence 传字符串应给 invalid_argument，而非 internal_error。"""
+    student = make_student(service)
+    ingest_and_confirm(service, student, [make_question()])
+    kc_id = service.store.attempt_kc_rows(student)[0]["kc_id"]
+    resp = service.record_reassessment(
+        student, kc_id, correct_count=1, total_count=1, self_reported_confidence="0.5"
+    )
+    assert resp["ok"] is False
+    assert resp["error"]["code"] == "invalid_argument"

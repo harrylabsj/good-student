@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "multi_page_pdf",
+    "subjects": [
+      "语文",
+      "英语"
+    ],
+    "note": "合成样本：文本模拟多页 PDF（3 个附件页），语文 2 题 + 英语 2 题，候选与标注一致，source.page_count=3。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "语文",
+      "question_text": "下列句子使用了拟人修辞手法的一项是（ ）A. 月亮像玉盘。B. 花儿在风中笑。",
+      "student_answer": "A",
+      "correct_answer": "B",
+      "is_wrong": true,
+      "knowledge": [
+        "修辞手法"
+      ]
+    },
+    {
+      "source_locator": "page-2-question-2",
+      "subject": "语文",
+      "question_text": "给下列加点字注音：炽热",
+      "student_answer": "zhì rè",
+      "correct_answer": "chì rè",
+      "is_wrong": true,
+      "knowledge": [
+        "字音"
+      ]
+    },
+    {
+      "source_locator": "page-3-question-3",
+      "subject": "英语",
+      "question_text": "翻译：图书馆在邮局旁边。",
+      "student_answer": "The library is next to the post office.",
+      "correct_answer": "The library is next to the post office.",
+      "is_wrong": false,
+      "knowledge": [
+        "汉译英"
+      ]
+    },
+    {
+      "source_locator": "page-3-question-4",
+      "subject": "英语",
+      "question_text": "选择：—How ___ is the T-shirt? —It's 50 yuan. A. many B. much C. old",
+      "student_answer": "A",
+      "correct_answer": "B",
+      "is_wrong": true,
+      "knowledge": [
+        "疑问词"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "clear_print",
+    "subjects": [
+      "化学"
+    ],
+    "note": "合成样本：清晰印刷、化学 3 题，候选与标注完全一致。非真实材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "化学",
+      "question_text": "写出实验室用过氧化氢制取氧气的化学方程式。",
+      "student_answer": "H2O2 → H2O + O2",
+      "correct_answer": "2H2O2 --MnO2--> 2H2O + O2↑",
+      "is_wrong": true,
+      "knowledge": [
+        "化学方程式配平"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "化学",
+      "question_text": "空气中含量最多的气体是 ___。",
+      "student_answer": "氮气",
+      "correct_answer": "氮气",
+      "is_wrong": false,
+      "knowledge": [
+        "空气成分"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "化学",
+      "question_text": "下列物质属于氧化物的是（ ）A. O2 B. H2O C. KClO3",
+      "student_answer": "C",
+      "correct_answer": "B",
+      "is_wrong": true,
+      "knowledge": [
+        "氧化物概念"
+      ]
+    }
+  ]
+}

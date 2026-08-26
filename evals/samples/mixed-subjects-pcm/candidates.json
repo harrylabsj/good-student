@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/mixed-subjects-pcm",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "数学",
+        "confidence": 0.98
+      },
+      "question_text": "计算：|-3| + (-2)² = ?",
+      "student_answer": "-1",
+      "correct_answer": "7",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "绝对值与乘方",
+          "confidence": 0.95
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.95,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "物理",
+        "confidence": 0.99
+      },
+      "question_text": "声音在空气中的传播速度约为 ___ m/s（15 ℃）。",
+      "student_answer": "340",
+      "correct_answer": "340",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "声速",
+          "confidence": 0.96
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.96,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": {
+        "value": "化学",
+        "confidence": 0.99
+      },
+      "question_text": "水的化学式是 ___。",
+      "student_answer": "H2O",
+      "correct_answer": "H2O",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "化学式",
+          "confidence": 0.97
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.97,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

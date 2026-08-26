@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "no_correct_answer",
+    "subjects": [
+      "化学"
+    ],
+    "note": "合成样本：答案区域被裁掉（正确答案不可见）。候选 correct_answer 置 null 并标注 uncertain_fields。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "化学",
+      "question_text": "写出碳酸钙与稀盐酸反应的化学方程式。",
+      "student_answer": "CaCO3 + HCl → CaCl2 + H2O + CO2",
+      "correct_answer": null,
+      "is_wrong": true,
+      "uncertain_fields": [
+        "correct_answer"
+      ],
+      "knowledge": [
+        "化学方程式"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "化学",
+      "question_text": "将紫色石蕊试液滴入稀硫酸中，溶液变成什么颜色？",
+      "student_answer": "蓝色",
+      "correct_answer": null,
+      "is_wrong": true,
+      "uncertain_fields": [
+        "correct_answer"
+      ],
+      "knowledge": [
+        "酸碱指示剂"
+      ]
+    }
+  ]
+}

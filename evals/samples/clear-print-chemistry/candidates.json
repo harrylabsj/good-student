@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/clear-print-chemistry",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "化学",
+        "confidence": 0.98
+      },
+      "question_text": "写出实验室用过氧化氢制取氧气的化学方程式。",
+      "student_answer": "H2O2 → H2O + O2",
+      "correct_answer": "2H2O2 --MnO2--> 2H2O + O2↑",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "化学方程式配平",
+          "confidence": 0.95
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.95,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "化学",
+        "confidence": 0.99
+      },
+      "question_text": "空气中含量最多的气体是 ___。",
+      "student_answer": "氮气",
+      "correct_answer": "氮气",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "空气成分",
+          "confidence": 0.98
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.98,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": {
+        "value": "化学",
+        "confidence": 0.99
+      },
+      "question_text": "下列物质属于氧化物的是（ ）A. O2 B. H2O C. KClO3",
+      "student_answer": "C",
+      "correct_answer": "B",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "氧化物概念",
+          "confidence": 0.96
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.96,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

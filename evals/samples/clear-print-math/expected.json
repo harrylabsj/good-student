@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "clear_print",
+    "subjects": [
+      "数学"
+    ],
+    "note": "合成样本：清晰印刷、数学 3 题，候选与标注完全一致。非真实材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "数学",
+      "question_text": "解方程：3(x - 2) = 2x + 1",
+      "student_answer": "x = 5",
+      "correct_answer": "x = 7",
+      "is_wrong": true,
+      "knowledge": [
+        "一元一次方程"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "数学",
+      "question_text": "计算：125 × 32 × 25 = ?",
+      "student_answer": "100000",
+      "correct_answer": "100000",
+      "is_wrong": false,
+      "knowledge": [
+        "乘法结合律与简算"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "数学",
+      "question_text": "一个圆的半径是 4 cm，求它的面积。（π 取 3.14）",
+      "student_answer": "25.12 cm²",
+      "correct_answer": "50.24 cm²",
+      "is_wrong": true,
+      "knowledge": [
+        "圆的面积"
+      ]
+    }
+  ]
+}

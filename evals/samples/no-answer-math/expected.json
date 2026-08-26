@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "no_correct_answer",
+    "subjects": [
+      "数学"
+    ],
+    "note": "合成样本：试卷未附标准答案（正确答案不可见），expected/candidates 的 correct_answer 均为 null。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "数学",
+      "question_text": "计算：(1/2 - 1/3) × 6 = ?",
+      "student_answer": "5",
+      "correct_answer": null,
+      "is_wrong": true,
+      "knowledge": [
+        "分数混合运算"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "数学",
+      "question_text": "某数的 3 倍比它的 2 倍大 6，求这个数。",
+      "student_answer": "3",
+      "correct_answer": null,
+      "is_wrong": true,
+      "knowledge": [
+        "列方程解题"
+      ]
+    }
+  ]
+}

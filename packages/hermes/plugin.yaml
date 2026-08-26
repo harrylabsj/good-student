@@ -1,0 +1,35 @@
+name: good-student
+version: 0.1.0
+description: >-
+  错题诊断与学习行动：宿主模型负责识别（模式 A），确定性 core 负责可信。
+  识别候选必须经家长确认后才进入学习画像。
+author: haidong
+license: MIT
+manifest_version: 2
+api_version: 1
+tags: [education, wrong-book, learning]
+python_dependencies:
+  # good-student core 须与本插件同环境可 import（pip install -e <repo>/core 或发布包）
+  - "jsonschema>=4.20,<5"
+config_schema:
+  data_dir:
+    type: str
+    default: ""
+    description: "学生数据目录；缺省 ~/.good-student/（或 GOOD_STUDENT_DATA 环境变量）"
+  vision_capable:
+    type: bool
+    default: true
+    description: "显式声明宿主无视觉能力时置 false，插件将走文本降级路径"
+provides_tools:
+  - good_student_capabilities
+  - good_student_create_student
+  - good_student_ingest_candidates
+  - good_student_list_pending
+  - good_student_confirm_questions
+  - good_student_analyze
+  - good_student_create_plan
+  - good_student_record_reassessment
+  - good_student_export_student
+  - good_student_delete_student
+  - good_student_doctor
+  - good_student_extract_attachments

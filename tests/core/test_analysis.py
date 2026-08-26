@@ -64,18 +64,40 @@ def test_failed_independent_reassessment_gives_evidenced(service):
     assert "failed_independent_reassessment" in w["reason_codes"]
 
 
-def test_passed_reassessment_gives_improving_then_mastered(service):
+def test_failed_reassessment_visible_even_without_wrong_attempts(service):
+    """M1：知识点只有正确作答 + 一次失败独立复测时，复测失败必须可见为薄弱点。"""
     student = make_student(service)
-    ingest_and_confirm(service, student, [make_question()])
+    ingest_and_confirm(service, student, [make_question(is_wrong=False)])
     kc_id = service.store.attempt_kc_rows(student)[0]["kc_id"]
+    resp = service.record_reassessment(
+        student, kc_id, correct_count=0, total_count=4, is_new_variant=True, no_hints=True
+    )
+    assert resp["ok"]
+    assert resp["data"]["passed"] is False
+    w = get_weakness(service.analyze(student)["data"], "异分母分数加法")
+    assert w["status"] == "evidenced_weakness"
+    assert "failed_independent_reassessment" in w["reason_codes"]
+
+
+def test_passed_reassessment_gives_improving_then_mastered(service):
+    """复测日期硬编码在过去、now 显式注入：不依赖墙钟，任何日期运行都确定。"""
+    student = make_student(service)
+    # 确认的 attempted_at 也固定到过去，避免被 now 过滤为"未来日期"
+    ingest_and_confirm(
+        service, student, [make_question()], edits_by_index={0: {"attempted_at": "2026-08-18T10:00:00"}}
+    )
+    kc_id = service.store.attempt_kc_rows(student)[0]["kc_id"]
+    now = "2026-08-26T12:00:00+00:00"  # 两个复测都在过去，且未到 08-21+14 天衰减点
 
     first = service.record_reassessment(
-        student, kc_id, correct_count=4, total_count=5, completed_at="2026-08-20T10:00:00"
+        student, kc_id, correct_count=4, total_count=5,
+        completed_at="2026-08-20T10:00:00", now=now,
     )
     assert first["data"]["updated_weakness"]["status"] == "improving"
 
     second = service.record_reassessment(
-        student, kc_id, correct_count=5, total_count=5, completed_at="2026-08-21T10:00:00"
+        student, kc_id, correct_count=5, total_count=5,
+        completed_at="2026-08-21T10:00:00", now=now,
     )
     w = second["data"]["updated_weakness"]
     assert w["status"] == "mastered"
@@ -84,13 +106,19 @@ def test_passed_reassessment_gives_improving_then_mastered(service):
 
 def test_mastered_decays_to_review_due(service):
     student = make_student(service)
-    ingest_and_confirm(service, student, [make_question()])
+    ingest_and_confirm(
+        service, student, [make_question()], edits_by_index={0: {"attempted_at": "2026-07-18T10:00:00"}}
+    )
     kc_id = service.store.attempt_kc_rows(student)[0]["kc_id"]
+    # 复测在 07-20/21，14 天衰减点在 08-04；now 注入衰减点之后
+    now = "2026-08-10T12:00:00+00:00"
     service.record_reassessment(
-        student, kc_id, correct_count=5, total_count=5, completed_at="2026-07-20T10:00:00"
+        student, kc_id, correct_count=5, total_count=5,
+        completed_at="2026-07-20T10:00:00", now=now,
     )
     resp = service.record_reassessment(
-        student, kc_id, correct_count=5, total_count=5, completed_at="2026-07-21T10:00:00"
+        student, kc_id, correct_count=5, total_count=5,
+        completed_at="2026-07-21T10:00:00", now=now,
     )
     w = resp["data"]["updated_weakness"]
     assert w["status"] == "review_due"

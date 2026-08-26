@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "clear_print",
+    "subjects": [
+      "英语"
+    ],
+    "note": "合成样本：清晰印刷、英语 3 题，候选与标注完全一致。非真实材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "英语",
+      "question_text": "选择：There ___ a book and two pens on the desk. A. is B. are C. be",
+      "student_answer": "B",
+      "correct_answer": "A",
+      "is_wrong": true,
+      "knowledge": [
+        "there be 句型就近原则"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "英语",
+      "question_text": "翻译：我每天早上六点半起床。",
+      "student_answer": "I get up at half past six every morning.",
+      "correct_answer": "I get up at half past six every morning.",
+      "is_wrong": false,
+      "knowledge": [
+        "汉译英"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "英语",
+      "question_text": "用所给词的适当形式填空：Look! The children ___ (play) football on the playground.",
+      "student_answer": "play",
+      "correct_answer": "are playing",
+      "is_wrong": true,
+      "knowledge": [
+        "现在进行时"
+      ]
+    }
+  ]
+}

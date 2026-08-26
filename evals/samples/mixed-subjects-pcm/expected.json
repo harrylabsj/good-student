@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "mixed_subjects",
+    "subjects": [
+      "数学",
+      "物理",
+      "化学"
+    ],
+    "note": "合成样本：同页混合科目（数学+物理+化学），应拆分为 3 题；候选与标注一致。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "数学",
+      "question_text": "计算：|-3| + (-2)² = ?",
+      "student_answer": "-1",
+      "correct_answer": "7",
+      "is_wrong": true,
+      "knowledge": [
+        "绝对值与乘方"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "物理",
+      "question_text": "声音在空气中的传播速度约为 ___ m/s（15 ℃）。",
+      "student_answer": "340",
+      "correct_answer": "340",
+      "is_wrong": false,
+      "knowledge": [
+        "声速"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "化学",
+      "question_text": "水的化学式是 ___。",
+      "student_answer": "H2O",
+      "correct_answer": "H2O",
+      "is_wrong": false,
+      "knowledge": [
+        "化学式"
+      ]
+    }
+  ]
+}

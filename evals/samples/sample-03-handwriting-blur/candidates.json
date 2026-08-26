@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "source": {"source_type": "text", "source_ref": "evals/samples/sample-03-handwriting-blur", "page_count": 1},
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {"value": "物理", "confidence": 0.6},
+      "question_text": "一辆汽车以 20 m/s 的速度行驶，刹车后 5 s 内停下，求刹车距离。",
+      "student_answer": null,
+      "correct_answer": "50 m",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "匀变速直线运动", "confidence": 0.55}],
+      "error_reason_candidates": [{"code": "unknown"}],
+      "extraction_confidence": 0.45,
+      "needs_confirmation": true,
+      "uncertain_fields": ["subject", "student_answer", "knowledge_candidates"]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {"value": "数学", "confidence": 0.8},
+      "question_text": "计算：0.25 × 14.8 × 4 = ?",
+      "student_answer": "3.7",
+      "correct_answer": "37",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "小数乘法简算", "confidence": 0.7}],
+      "error_reason_candidates": [{"code": "procedure_gap", "confidence": 0.6}],
+      "extraction_confidence": 0.7,
+      "needs_confirmation": true,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": ["手写潦草：第 1 题学生答案未能识别；第 3 题区域模糊，未提取。"]
+}

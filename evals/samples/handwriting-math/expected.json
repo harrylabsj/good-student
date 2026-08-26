@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "handwriting",
+    "subjects": [
+      "数学"
+    ],
+    "note": "合成样本：手写体转写（文本模拟手写答卷，非真实手写图像）。候选漏第 3 题（字迹潦草）、第 2 题学生答案转写错误。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "数学",
+      "question_text": "计算：7.2 × 99 + 7.2 = ?",
+      "student_answer": "720",
+      "correct_answer": "720",
+      "is_wrong": false,
+      "knowledge": [
+        "乘法分配律"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "数学",
+      "question_text": "解比例：x : 12 = 3 : 4",
+      "student_answer": "x = 16",
+      "correct_answer": "x = 9",
+      "is_wrong": true,
+      "uncertain_fields": [
+        "student_answer"
+      ],
+      "low_confidence": true,
+      "knowledge": [
+        "解比例"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "数学",
+      "question_text": "一个三角形的底是 8 cm，高是 5 cm，面积是多少？",
+      "student_answer": "40 cm²",
+      "correct_answer": "20 cm²",
+      "is_wrong": true,
+      "knowledge": [
+        "三角形面积"
+      ]
+    }
+  ]
+}

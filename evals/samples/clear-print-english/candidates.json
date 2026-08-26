@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/clear-print-english",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.99
+      },
+      "question_text": "选择：There ___ a book and two pens on the desk. A. is B. are C. be",
+      "student_answer": "B",
+      "correct_answer": "A",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "there be 句型就近原则",
+          "confidence": 0.97
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.97,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.99
+      },
+      "question_text": "翻译：我每天早上六点半起床。",
+      "student_answer": "I get up at half past six every morning.",
+      "correct_answer": "I get up at half past six every morning.",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "汉译英",
+          "confidence": 0.96
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.96,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.99
+      },
+      "question_text": "用所给词的适当形式填空：Look! The children ___ (play) football on the playground.",
+      "student_answer": "play",
+      "correct_answer": "are playing",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "现在进行时",
+          "confidence": 0.97
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.97,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

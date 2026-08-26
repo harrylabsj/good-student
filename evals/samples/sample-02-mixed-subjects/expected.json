@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "mixed_subjects",
+    "subjects": ["数学", "英语"],
+    "note": "合成占位样本：同页混合科目，应拆分为 2 题。正式样本需真实匿名材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "数学",
+      "question_text": "解方程：2x + 5 = 17",
+      "student_answer": "x = 5",
+      "correct_answer": "x = 6",
+      "is_wrong": true,
+      "knowledge": ["一元一次方程"]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "英语",
+      "question_text": "用所给词的适当形式填空：She ___ (go) to school by bus every day.",
+      "student_answer": "go",
+      "correct_answer": "goes",
+      "is_wrong": true,
+      "knowledge": ["一般现在时第三人称单数"]
+    }
+  ]
+}

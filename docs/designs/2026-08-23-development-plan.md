@@ -58,16 +58,16 @@ based-on: Good-student 产品与系统设计 v1.0
 
 ## 4. M1：Hermes 垂直切片 + 数据迁移（Phase 1）
 
-任务分解：
+任务分解（进度截至 2026-08-25）：
 
-1. **Hermes 原生插件**：`packages/hermes/`（plugin.yaml + `__init__.py`）；附件引用获取；`ctx.llm.complete_structured()` 桥（模式 A，文本/图片 + JSON Schema）；数据目录与配置。
-2. **提示词工程**：`prompts/wrong-book-extraction.md` 定稿；针对 §10.2 每条边界写对抗样本（注入、混合科目、手写模糊）。
-3. **Skill 定稿**：启用判断、同意流程（首次处理附件说明宿主模型用途）、先确认后分析、降级路径——§19 错误注册表逐条映射为 Skill 指令与用户话术。
-4. **匿名评测集 + 评测脚本**（§21.2 场景矩阵）：清晰印刷、手写、多页 PDF、同页混科、裁切/模糊/旋转、无正确答案、注入文本、模型拒绝/非法 JSON；指标：字段准确率、漏题率、误题率、置信度校准、人工修改量。可离线跑的子集进 CI。
-5. **旧数据迁移器**：只读读取 `student-companion-agent` 数据；`students[name]` → UUID Student；score/homework/progress/evidence → legacy evidence（整场分数只进科目概览）；迁移前自动备份，失败不改原数据；新旧命令并行一个小版本并打印迁移提示。
-6. **端到端验收**（§21.4 单宿主版）：三科 20 题材料 → 确认 → 分析 → 计划 → 一次复测。
+1. **Hermes 原生插件**（已完成，含真机装配验证 2026-08-25）：`packages/hermes/`（plugin.yaml + `__init__.py`）；`HermesHostBridge` 抽象 + `FakeHermesBridge`；`ctx.llm.complete_structured()` 桥（模式 A，文本/图片 + JSON Schema）；数据目录与配置；18 个 adapter 测试。真机装配：core 以 editable 装进 Hermes venv（`python_dependencies` 只是声明缝，不自动安装），插件目录复制进 `~/.hermes/plugins/` 并 enable；`hermes plugins doctor --ci` 通过（12 工具）；README 5 条 API 假设已逐条标注验证结论。真机缺陷修复：core SQLite 改 thread-local 连接（Hermes 跨线程执行工具处理器）、插件 Service 惰性创建（避免注册副作用建默认库）。
+2. **提示词工程**（已定稿）：`prompts/wrong-book-extraction.md` 覆盖 §10.2 全部边界 + 修复重试变体；tests/prompts/ 防漂移测试（内嵌 Schema 与 `schemas/` 解析级全等比对）。针对 §10.2 的对抗样本纳入 evals 场景矩阵，待真实样本扩充。
+3. **Skill 定稿**（已完成）：启用判断、同意流程、§19 错误注册表 11 条逐条映射、降级路径与 references 核对一致。
+4. **匿名评测集 + 评测脚本**（框架已完成）：`scripts/evaluate_extraction.py`（可插拔 extractor + 五字段准确率/漏题率/误题率/置信度校准指标）；`evals/` 骨架 + 3 个合成占位样本。**遗留：按 `evals/README.md` 用真实匿名材料扩充至 D5 门槛（≥50 题五科），可离线子集进 CI。**
+5. **旧数据迁移器**（已完成）：只读迁移 `student-companion-agent` 单文件 JSON；`students[name]` → 稳定 UUID5 Student；score/homework/progress/evidence → `legacy_records` 表（schema v2），整场分数只进科目概览证据；迁移前自动备份、单事务回滚、幂等重跑；`good-student migrate-legacy [--dry-run]`；11 个测试。
+6. **端到端验收**（§21.4 单宿主版，已完成 2026-08-25）：真实 Hermes + 真实宿主模型（deepseek/SCNet-Max）跑通三科 20 题合成材料全闭环：extract（20/20 识别，2 处刻意模糊被正确标记）→ list_pending → confirm（20/20，含 edits）→ analyze（29 个疑似薄弱点，无精确掌握率）→ create_plan（18 条动作字段齐全，11 个错因未知诚实 skipped）→ record_reassessment（suspected→improving）+ 2 个负向用例零写入。§24 第 2/3/4/5/6/7/10 条全部通过。证据：`docs/designs/2026-08-25-m1-e2e-evidence.md`，材料：`evals/e2e/m1-e2e-material.txt`。
 
-出口条件：Hermes 上不配置新 API Key 完成全流程；评测达 D5 门槛。
+出口条件：Hermes 上不配置新 API Key 完成全流程（已达）；评测达 D5 门槛（遗留，见任务 4）。
 
 ## 5. M2：OpenClaw 与 Codex 包（Phase 2）
 

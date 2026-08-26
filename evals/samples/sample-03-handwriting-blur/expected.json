@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "handwriting",
+    "subjects": ["物理", "数学", "语文"],
+    "note": "合成占位样本：手写模糊，候选故意漏第 3 题、漏识别第 1 题学生答案（null），用于验证漏题率与人工修改量统计。正式样本需真实匿名材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "物理",
+      "question_text": "一辆汽车以 20 m/s 的速度行驶，刹车后 5 s 内停下，求刹车距离。",
+      "student_answer": "40 m",
+      "correct_answer": "50 m",
+      "is_wrong": true,
+      "knowledge": ["匀变速直线运动"]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "数学",
+      "question_text": "计算：0.25 × 14.8 × 4 = ?",
+      "student_answer": "3.7",
+      "correct_answer": "37",
+      "is_wrong": true,
+      "knowledge": ["小数乘法简算"]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "语文",
+      "question_text": "写出下列词语的近义词：安静（　　）",
+      "student_answer": "吵闹",
+      "correct_answer": "宁静",
+      "is_wrong": true,
+      "knowledge": ["近义词"]
+    }
+  ]
+}

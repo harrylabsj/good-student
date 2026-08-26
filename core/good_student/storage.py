@@ -1,7 +1,13 @@
-"""SQLite 存储：单文件、WAL、外键约束、原子事务。写操作由调用方通过 tx() 包裹。"""
+"""SQLite 存储：单文件、WAL、外键约束、原子事务。写操作由调用方通过 tx() 包裹。
+
+线程模型：宿主（如 Hermes）在与插件注册线程不同的线程里执行工具处理器，
+单连接会触发 sqlite3 线程亲和错误（M1 真机验收发现）。连接按线程隔离
+（thread-local），WAL 模式天然支持多连接并发读写；close() 关闭所有已建连接。
+"""
 
 import json
 import sqlite3
+import threading
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -26,31 +32,52 @@ class Store:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.data_dir / "good_student.db"
+        self._local = threading.local()
+        self._conns: list[sqlite3.Connection] = []
+        self._conns_lock = threading.Lock()
         try:
-            self._conn = sqlite3.connect(self.db_path, timeout=10)
+            conn = self._connection()
         except sqlite3.Error as exc:
             raise GoodStudentError("persistence_error", f"无法打开数据库：{exc}") from exc
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.execute("PRAGMA foreign_keys=ON")
-        self._conn.execute("PRAGMA busy_timeout=10000")
         try:
-            migrations.migrate(self._conn)
+            migrations.migrate(conn)
         except sqlite3.DatabaseError as exc:
             raise GoodStudentError("persistence_error", f"迁移失败：{exc}") from exc
 
+    def _connection(self) -> sqlite3.Connection:
+        """返回当前线程的连接；首次访问时新建并登记（供 close() 统一关闭）。"""
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            # check_same_thread=False：正常使用仍按线程隔离，仅 close() 会跨线程
+            # 关闭已登记连接；WAL + busy_timeout 保证并发写安全（单写者串行）。
+            conn = sqlite3.connect(self.db_path, timeout=10, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA foreign_keys=ON")
+            conn.execute("PRAGMA busy_timeout=10000")
+            with self._conns_lock:
+                self._conns.append(conn)
+            self._local.conn = conn
+        return conn
+
+    @property
+    def _conn(self) -> sqlite3.Connection:
+        return self._connection()
+
     def close(self) -> None:
-        self._conn.close()
+        with self._conns_lock:
+            conns, self._conns = self._conns, []
+        for conn in conns:
+            conn.close()
 
     @contextmanager
     def tx(self) -> Iterator[sqlite3.Connection]:
         try:
             yield self._conn
             self._conn.commit()
-        except sqlite3.Error:
-            self._conn.rollback()
-            raise
-        except GoodStudentError:
+        except Exception:
+            # 任意异常都回滚：避免残留未提交事务被下一次 commit() 意外提交（M2 兜底后，
+            # _envelope 会接住通用异常，必须保证此时事务已回滚）。
             self._conn.rollback()
             raise
 

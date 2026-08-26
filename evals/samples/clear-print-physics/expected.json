@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "clear_print",
+    "subjects": [
+      "物理"
+    ],
+    "note": "合成样本：清晰印刷、物理 3 题，候选与标注完全一致。非真实材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "物理",
+      "question_text": "一个物体质量为 2 kg，受到 10 N 的水平拉力，求加速度。（不计摩擦）",
+      "student_answer": "0.2 m/s²",
+      "correct_answer": "5 m/s²",
+      "is_wrong": true,
+      "knowledge": [
+        "牛顿第二定律"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "物理",
+      "question_text": "家庭电路的电压是 ___ V。",
+      "student_answer": "220",
+      "correct_answer": "220",
+      "is_wrong": false,
+      "knowledge": [
+        "家庭电路"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "物理",
+      "question_text": "下列哪种现象说明分子在不停地做无规则运动？A. 柳絮飞扬 B. 花香四溢 C. 雪花飘飘",
+      "student_answer": "A",
+      "correct_answer": "B",
+      "is_wrong": true,
+      "knowledge": [
+        "分子热运动"
+      ]
+    }
+  ]
+}

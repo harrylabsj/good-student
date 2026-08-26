@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import traceback
 import uuid
 from datetime import timedelta
 from functools import wraps
@@ -15,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from good_student import __version__, analysis, clock, recommendations, validation
+from good_student import migrate_legacy as legacy_migrator
 from good_student.errors import GoodStudentError
 from good_student.models import (
     CONFIRM_EDIT_FIELDS,
@@ -22,6 +24,7 @@ from good_student.models import (
     DEFAULT_CANDIDATE_TTL_HOURS,
     ERROR_REASON_LABELS,
     LOW_CONFIDENCE_THRESHOLD,
+    PASS_ACCURACY_THRESHOLD,
     CandidateStatus,
 )
 from good_student.storage import Store
@@ -67,6 +70,11 @@ def _envelope(method):
             return _err(exc.code, exc.message, exc.details)
         except sqlite3.Error as exc:
             return _err("persistence_error", f"本地存储操作失败，原数据未覆盖：{exc}")
+        except Exception as exc:  # noqa: BLE001 — LLM 宿主必须始终收到 envelope
+            # 未知缺陷降级为 internal_error（写入事务已在 storage.tx 回滚），
+            # traceback 落 stderr 供本地排查，不回传给宿主模型完整细节。
+            traceback.print_exc()
+            return _err("internal_error", f"内部错误：{type(exc).__name__}: {exc}")
 
     return wrapper
 
@@ -199,6 +207,10 @@ class Service:
                 captured_at = clock.to_utc_iso(captured_at)
             except ValueError as exc:
                 raise GoodStudentError("invalid_argument", f"captured_at 不是合法时间：{exc}") from exc
+        if not isinstance(ttl_hours, int) or isinstance(ttl_hours, bool) or not 1 <= ttl_hours <= 24 * 365:
+            raise GoodStudentError(
+                "invalid_argument", "ttl_hours 必须为 1 到 8760 之间的整数（小时）"
+            )
 
         content_hash = _content_hash(batch)
         now = clock.iso()
@@ -356,6 +368,17 @@ class Service:
                 fail(index, "invalid_argument", f"不允许的编辑字段：{unknown or 'edits'}")
                 continue
 
+            # 编辑字段类型校验（M3）：宿主模型可能按候选 payload 的 {value,confidence} 结构
+            # 传 subject/grade 等，直接写 SQLite 会得到误导性的 persistence_error。
+            bad_type = [
+                f
+                for f in ("subject", "grade", "question_text", "student_answer", "correct_answer")
+                if f in edits and edits[f] is not None and not isinstance(edits[f], str)
+            ]
+            if bad_type:
+                fail(index, "invalid_argument", f"edits.{bad_type[0]} 必须为字符串或 null")
+                continue
+
             if action == "reject":
                 plan.append({"kind": "reject", "candidate": candidate})
                 continue
@@ -379,7 +402,7 @@ class Service:
             attempted_at = edits.get("attempted_at") or (source or {}).get("captured_at") or clock.iso()
             try:
                 attempted_at = clock.to_utc_iso(attempted_at)
-            except ValueError as exc:
+            except (ValueError, TypeError) as exc:
                 fail(index, "invalid_argument", f"attempted_at 不是合法时间：{exc}")
                 continue
             if edits.get("knowledge_labels") is not None:
@@ -455,10 +478,10 @@ class Service:
         return self._idempotent_call(idempotency_key, _do)
 
     @_envelope
-    def analyze(self, student_id: str, persist_snapshot: bool = True) -> dict:
+    def analyze(self, student_id: str, persist_snapshot: bool = True, now: str | None = None) -> dict:
         _require_student(self.store, student_id)
         self._expire_now()
-        result, warnings = analysis.analyze_student(self.store, student_id)
+        result, warnings = analysis.analyze_student(self.store, student_id, now)
         with self.store.tx():
             self.store.mark_candidates_analyzed(student_id)
             if persist_snapshot:
@@ -470,9 +493,9 @@ class Service:
         return _ok(result, warnings=warnings or None)
 
     @_envelope
-    def create_plan(self, student_id: str, idempotency_key: str | None = None) -> dict:
+    def create_plan(self, student_id: str, idempotency_key: str | None = None, now: str | None = None) -> dict:
         _require_student(self.store, student_id)
-        result, _ = analysis.analyze_student(self.store, student_id)
+        result, _ = analysis.analyze_student(self.store, student_id, now)
         reason_by_kc = self._dominant_reasons(student_id)
 
         def _do() -> dict:
@@ -542,18 +565,23 @@ class Service:
         self_reported_confidence: float | None = None,
         completed_at: str | None = None,
         idempotency_key: str | None = None,
+        now: str | None = None,
     ) -> dict:
         _require_student(self.store, student_id)
         if not isinstance(correct_count, int) or not isinstance(total_count, int) or total_count < 1:
             raise GoodStudentError("invalid_argument", "correct_count/total_count 必须为整数且 total_count ≥ 1")
         if not 0 <= correct_count <= total_count:
             raise GoodStudentError("invalid_argument", "correct_count 必须在 0 与 total_count 之间")
-        if self_reported_confidence is not None and not 0 <= self_reported_confidence <= 1:
-            raise GoodStudentError("invalid_argument", "self_reported_confidence 必须在 0-1 之间")
+        if self_reported_confidence is not None and (
+            not isinstance(self_reported_confidence, (int, float))
+            or isinstance(self_reported_confidence, bool)  # bool 是 int 子类，须排除
+            or not 0 <= self_reported_confidence <= 1
+        ):
+            raise GoodStudentError("invalid_argument", "self_reported_confidence 必须为 0-1 之间的数字")
         if not any(link["kc_id"] == kc_id for link in self.store.attempt_kc_rows(student_id)):
             raise GoodStudentError("not_found", f"知识点 {kc_id} 未出现在该学生的已确认作答中")
         try:
-            completed = clock.to_utc_iso(completed_at) if completed_at else clock.iso()
+            completed = clock.to_utc_iso(completed_at) if completed_at else (now or clock.iso())
         except ValueError as exc:
             raise GoodStudentError("invalid_argument", f"completed_at 不是合法时间：{exc}") from exc
 
@@ -577,7 +605,7 @@ class Service:
                 self.store.log_event(
                     "reassessment_recorded", {"student_id": student_id, "kc_id": kc_id}
                 )
-            result, _ = analysis.analyze_student(self.store, student_id)
+            result, _ = analysis.analyze_student(self.store, student_id, now)
             with self.store.tx():
                 self.store.replace_snapshots(student_id, analysis.snapshot_rows(student_id, result))
             weakness = next(
@@ -600,7 +628,7 @@ class Service:
                         "no_hints": no_hints,
                         "completed_at": completed,
                     },
-                    "passed": correct_count / total_count >= 0.8,
+                    "passed": correct_count / total_count >= PASS_ACCURACY_THRESHOLD,
                     "updated_weakness": weakness,
                 }
             )
@@ -714,6 +742,12 @@ class Service:
             return resp
 
         return self._idempotent_call(idempotency_key, _do)
+
+    @_envelope
+    def migrate_legacy(self, legacy_path: str | Path, dry_run: bool = False) -> dict:
+        """只读迁移旧 student-companion-agent 数据（设计 §22），返回迁移摘要。"""
+        summary = legacy_migrator.run(self.store, Path(legacy_path), dry_run=dry_run)
+        return _ok(summary, warnings=summary["warnings"] or None)
 
     @_envelope
     def doctor(self) -> dict:

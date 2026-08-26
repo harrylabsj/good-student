@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "handwriting",
+    "subjects": [
+      "语文"
+    ],
+    "note": "合成样本：手写体转写（文本模拟）。候选第 1 题学生答案转写错误（“荧”误识为“萤”）。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "语文",
+      "question_text": "看拼音写词语：jīng yíng",
+      "student_answer": "晶荧",
+      "correct_answer": "晶莹",
+      "is_wrong": true,
+      "uncertain_fields": [
+        "student_answer"
+      ],
+      "low_confidence": true,
+      "knowledge": [
+        "字形"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "语文",
+      "question_text": "写出“骄傲”的反义词。",
+      "student_answer": "谦虚",
+      "correct_answer": "谦虚",
+      "is_wrong": false,
+      "knowledge": [
+        "反义词"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "语文",
+      "question_text": "判断：“《草船借箭》出自《三国演义》。”这句话是否正确？",
+      "student_answer": "错误",
+      "correct_answer": "正确",
+      "is_wrong": true,
+      "knowledge": [
+        "文学常识"
+      ]
+    }
+  ]
+}

@@ -12,7 +12,9 @@ license = { text = "MIT" }
 dependencies = ["jsonschema>=4.20"]
 
 [project.optional-dependencies]
-mcp = ["mcp>=1.2"]
+# mcp>=2.0：mcp/server.py 使用 mcp.server.mcpserver.MCPServer（2.x 模块布局）；
+# 1.x 是 mcp.server.fastmcp.FastMCP，与本文件不兼容。
+mcp = ["mcp>=2.0"]
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.scripts]

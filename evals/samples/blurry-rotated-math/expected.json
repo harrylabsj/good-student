@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "cropped_blurry_rotated",
+    "subjects": [
+      "数学"
+    ],
+    "note": "合成样本：文本模拟页面旋转 + 墨迹遮挡。候选对第 2 题只提取到残缺题干、学生答案置 null，低置信并标注 uncertain_fields（不强行编造）。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "数学",
+      "question_text": "计算：3.6 ÷ 0.4 = ?",
+      "student_answer": "9",
+      "correct_answer": "9",
+      "is_wrong": false,
+      "uncertain_fields": [
+        "student_answer"
+      ],
+      "low_confidence": true,
+      "knowledge": [
+        "小数除法"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "数学",
+      "question_text": "一个长方形的长是 9 cm，宽是 4 cm，周长是多少？",
+      "student_answer": "36 cm",
+      "correct_answer": "26 cm",
+      "is_wrong": true,
+      "uncertain_fields": [
+        "question_text",
+        "student_answer"
+      ],
+      "low_confidence": true,
+      "knowledge": [
+        "长方形周长"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "source": {"source_type": "text", "source_ref": "evals/samples/sample-02-mixed-subjects", "page_count": 1},
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {"value": "数学", "confidence": 0.97},
+      "question_text": "解方程：2x + 5 = 17",
+      "student_answer": "x = 5",
+      "correct_answer": "x = 6",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "一元一次方程", "confidence": 0.92}],
+      "error_reason_candidates": [{"code": "calculation", "confidence": 0.7}],
+      "extraction_confidence": 0.93,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {"value": "英语", "confidence": 0.96},
+      "question_text": "用所给词的适当形式填空：She ___ (go) to school by bus every day.",
+      "student_answer": "go",
+      "correct_answer": "goes",
+      "is_wrong": true,
+      "knowledge_candidates": [{"label": "一般现在时第三人称单数", "confidence": 0.88}],
+      "error_reason_candidates": [{"code": "concept_gap", "confidence": 0.65}],
+      "extraction_confidence": 0.91,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": ["同页包含数学与英语两科，已拆分为独立题目。"]
+}

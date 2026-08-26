@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "handwriting",
+    "subjects": [
+      "化学"
+    ],
+    "note": "合成样本：手写体转写（文本模拟）。候选与标注一致，置信度中等。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "化学",
+      "question_text": "用化学符号表示：两个氢原子 ___。",
+      "student_answer": "H2",
+      "correct_answer": "2H",
+      "is_wrong": true,
+      "knowledge": [
+        "化学用语"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "化学",
+      "question_text": "铁在氧气中燃烧生成什么物质？",
+      "student_answer": "氧化铁",
+      "correct_answer": "四氧化三铁",
+      "is_wrong": true,
+      "knowledge": [
+        "金属与氧气反应"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1190 @@
+{
+  "samples_total": 22,
+  "samples_invalid": 0,
+  "questions_expected": 56,
+  "questions_extracted": 55,
+  "questions_matched": 54,
+  "miss_rate": 0.0357,
+  "false_positive_rate": 0.0182,
+  "field_accuracy": {
+    "subject": {
+      "correct": 54,
+      "total": 54,
+      "accuracy": 1.0
+    },
+    "question_text": {
+      "correct": 53,
+      "total": 54,
+      "accuracy": 0.9815
+    },
+    "student_answer": {
+      "correct": 49,
+      "total": 54,
+      "accuracy": 0.9074
+    },
+    "correct_answer": {
+      "correct": 54,
+      "total": 54,
+      "accuracy": 1.0
+    },
+    "knowledge": {
+      "correct": 54,
+      "total": 54,
+      "accuracy": 1.0
+    },
+    "is_wrong": {
+      "correct": 54,
+      "total": 54,
+      "accuracy": 1.0
+    }
+  },
+  "confidence_calibration": {
+    "buckets": [
+      {
+        "range": "[0.0, 0.6)",
+        "count": 4,
+        "accuracy": 0.25
+      },
+      {
+        "range": "[0.6, 0.8)",
+        "count": 6,
+        "accuracy": 0.6667
+      },
+      {
+        "range": "[0.8, 0.95)",
+        "count": 24,
+        "accuracy": 1.0
+      },
+      {
+        "range": "[0.95, 1.0]",
+        "count": 20,
+        "accuracy": 1.0
+      }
+    ],
+    "mean_confidence_when_correct": 0.8931,
+    "mean_confidence_when_incorrect": 0.52
+  },
+  "fields_requiring_correction": 6,
+  "attention": {
+    "checked": 7,
+    "ok": 7,
+    "failure_count": 0
+  },
+  "per_sample": [
+    {
+      "name": "blurry-physics",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": false,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true,
+            "low_confidence": true
+          },
+          "correct": false,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.55
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.6
+        }
+      ],
+      "fields_requiring_correction": 1,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "blurry-rotated-math",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true,
+            "low_confidence": true
+          },
+          "correct": true,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.5
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": false,
+            "student_answer": false,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true,
+            "low_confidence": true
+          },
+          "correct": false,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.3
+        }
+      ],
+      "fields_requiring_correction": 2,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "clear-print-chemistry",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.95
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.98
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.96
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "clear-print-chinese",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.97
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.98
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.95
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "clear-print-english",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.97
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.96
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.97
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "clear-print-math",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.97
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.98
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.96
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "clear-print-physics",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.96
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.98
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.95
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "handwriting-chemistry",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.82
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.8
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "handwriting-chinese",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": false,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true,
+            "low_confidence": true
+          },
+          "correct": false,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.68
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.84
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.8
+        }
+      ],
+      "fields_requiring_correction": 1,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "handwriting-english",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.82
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.85
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.8
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "handwriting-math",
+      "questions_expected": 3,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [
+        "page-1-question-3"
+      ],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.78
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": false,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true,
+            "low_confidence": true
+          },
+          "correct": false,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.62
+        }
+      ],
+      "fields_requiring_correction": 1,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "handwriting-physics",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.8
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.78
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "mixed-subjects-ce",
+      "questions_expected": 2,
+      "questions_extracted": 3,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [
+        "page-1-footer-note"
+      ],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.93
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.94
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "mixed-subjects-pcm",
+      "questions_expected": 3,
+      "questions_extracted": 3,
+      "questions_matched": 3,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.95
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.96
+        },
+        {
+          "source_locator": "page-1-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.97
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "multipage-chinese-english",
+      "questions_expected": 4,
+      "questions_extracted": 4,
+      "questions_matched": 4,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.94
+        },
+        {
+          "source_locator": "page-2-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.93
+        },
+        {
+          "source_locator": "page-3-question-3",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.95
+        },
+        {
+          "source_locator": "page-3-question-4",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.94
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "no-answer-chemistry",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true
+          },
+          "correct": true,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.82
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true,
+            "uncertain_fields": true
+          },
+          "correct": true,
+          "attention_checked": true,
+          "attention_ok": true,
+          "extraction_confidence": 0.82
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "no-answer-math",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.9
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.9
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "prompt-injection-english",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.92
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.92
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "prompt-injection-math",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.93
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.93
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "sample-01-clear-print-math",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.96
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.93
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "sample-02-mixed-subjects",
+      "questions_expected": 2,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.93
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.91
+        }
+      ],
+      "fields_requiring_correction": 0,
+      "invalid_output": false,
+      "error": null
+    },
+    {
+      "name": "sample-03-handwriting-blur",
+      "questions_expected": 3,
+      "questions_extracted": 2,
+      "questions_matched": 2,
+      "missed_locators": [
+        "page-1-question-3"
+      ],
+      "false_positive_locators": [],
+      "field_results": [
+        {
+          "source_locator": "page-1-question-1",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": false,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": false,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.45
+        },
+        {
+          "source_locator": "page-1-question-2",
+          "fields": {
+            "subject": true,
+            "question_text": true,
+            "student_answer": true,
+            "correct_answer": true,
+            "knowledge": true,
+            "is_wrong": true
+          },
+          "correct": true,
+          "attention_checked": false,
+          "attention_ok": true,
+          "extraction_confidence": 0.7
+        }
+      ],
+      "fields_requiring_correction": 1,
+      "invalid_output": false,
+      "error": null
+    }
+  ],
+  "extractor": "offline_fake"
+}

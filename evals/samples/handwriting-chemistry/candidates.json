@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/handwriting-chemistry",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "化学",
+        "confidence": 0.85
+      },
+      "question_text": "用化学符号表示：两个氢原子 ___。",
+      "student_answer": "H2",
+      "correct_answer": "2H",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "化学用语",
+          "confidence": 0.82
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.82,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "化学",
+        "confidence": 0.83
+      },
+      "question_text": "铁在氧气中燃烧生成什么物质？",
+      "student_answer": "氧化铁",
+      "correct_answer": "四氧化三铁",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "金属与氧气反应",
+          "confidence": 0.8
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.8,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

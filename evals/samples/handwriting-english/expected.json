@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "handwriting",
+    "subjects": [
+      "英语"
+    ],
+    "note": "合成样本：手写体转写（文本模拟）。候选与标注一致，置信度中等。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "英语",
+      "question_text": "填空：He ___ (not like) playing basketball.",
+      "student_answer": "don't like",
+      "correct_answer": "doesn't like",
+      "is_wrong": true,
+      "knowledge": [
+        "一般现在时否定"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "英语",
+      "question_text": "连词成句：is, this, what (?)",
+      "student_answer": "What is this?",
+      "correct_answer": "What is this?",
+      "is_wrong": false,
+      "knowledge": [
+        "特殊疑问句"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "英语",
+      "question_text": "选择：—___ is your father? —He is a doctor. A. What B. Who C. Where",
+      "student_answer": "B",
+      "correct_answer": "A",
+      "is_wrong": true,
+      "knowledge": [
+        "职业提问"
+      ]
+    }
+  ]
+}

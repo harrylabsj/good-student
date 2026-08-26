@@ -60,6 +60,10 @@ def main(argv: list[str] | None = None) -> None:
 
     sub.add_parser("doctor")
 
+    p = sub.add_parser("migrate-legacy", help="只读迁移旧 student-companion-agent 数据（设计 §22）")
+    p.add_argument("legacy_path", help="旧数据目录或 student-data.json 文件路径")
+    p.add_argument("--dry-run", action="store_true", help="只输出迁移摘要，不写入任何数据")
+
     args = parser.parse_args(argv)
     service = Service(args.data_dir)
     try:
@@ -92,6 +96,9 @@ def main(argv: list[str] | None = None) -> None:
                 ]
             elif args.reject_all:
                 pending = service.list_pending(args.student_id)
+                if not pending["ok"]:
+                    _print(pending)
+                    return
                 items = [
                     {"candidate_id": c["candidate_id"], "action": "reject"}
                     for c in pending["data"]["pending"]
@@ -122,6 +129,8 @@ def main(argv: list[str] | None = None) -> None:
             _print(service.delete_student(args.student_id, args.yes_with_phrase))
         elif args.command == "doctor":
             _print(service.doctor())
+        elif args.command == "migrate-legacy":
+            _print(service.migrate_legacy(args.legacy_path, dry_run=args.dry_run))
     finally:
         service.close()
 

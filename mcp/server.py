@@ -11,7 +11,8 @@ try:
     from mcp.server.mcpserver import MCPServer
 except ImportError:  # pragma: no cover
     print(
-        "缺少 MCP 依赖：pip install 'good-student[mcp]' 后重试",
+        "MCP 服务器需要 mcp>=2.0（1.x 的模块布局是 mcp.server.fastmcp，本文件使用 "
+        "mcp.server.mcpserver.MCPServer）：pip install 'good-student[mcp]' 后重试",
         file=sys.stderr,
     )
     raise
@@ -78,7 +79,7 @@ def good_student_confirm_questions(
 
 @mcp.tool()
 def good_student_analyze(student_id: str, persist_snapshot: bool = True) -> dict:
-    """生成疑似薄弱点与证据（只读；persist_snapshot=true 时保存当前快照）。"""
+    """生成疑似薄弱点与证据（写：会推进候选状态为 analyzed 并更新快照）。"""
     return _svc().analyze(student_id, persist_snapshot)
 
 

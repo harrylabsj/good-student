@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/handwriting-math",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "数学",
+        "confidence": 0.81
+      },
+      "question_text": "计算：7.2 × 99 + 7.2 = ?",
+      "student_answer": "720",
+      "correct_answer": "720",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "乘法分配律",
+          "confidence": 0.78
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.78,
+      "needs_confirmation": true,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "数学",
+        "confidence": 0.65
+      },
+      "question_text": "解比例：x : 12 = 3 : 4",
+      "student_answer": "x = 6",
+      "correct_answer": "x = 9",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "解比例",
+          "confidence": 0.62
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.62,
+      "needs_confirmation": true,
+      "uncertain_fields": [
+        "student_answer"
+      ]
+    }
+  ],
+  "warnings": [
+    "手写潦草：第 3 题涂改严重，未提取；第 2 题学生答案转写不确定。"
+  ]
+}

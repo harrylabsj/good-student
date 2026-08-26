@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/handwriting-english",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.85
+      },
+      "question_text": "填空：He ___ (not like) playing basketball.",
+      "student_answer": "don't like",
+      "correct_answer": "doesn't like",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "一般现在时否定",
+          "confidence": 0.82
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.82,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.88
+      },
+      "question_text": "连词成句：is, this, what (?)",
+      "student_answer": "What is this?",
+      "correct_answer": "What is this?",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "特殊疑问句",
+          "confidence": 0.85
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.85,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": {
+        "value": "英语",
+        "confidence": 0.83
+      },
+      "question_text": "选择：—___ is your father? —He is a doctor. A. What B. Who C. Where",
+      "student_answer": "B",
+      "correct_answer": "A",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "职业提问",
+          "confidence": 0.8
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.8,
+      "needs_confirmation": false,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": []
+}

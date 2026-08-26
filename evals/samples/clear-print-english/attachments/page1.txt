@@ -1,0 +1,9 @@
+【合成占位材料 / synthetic placeholder — 非真实学生材料】
+第 1 页（印刷体）
+
+1. 选择：There ___ a book and two pens on the desk. A. is B. are C. be
+   学生答案：B　标准答案：A　批改：×
+2. 翻译：我每天早上六点半起床。
+   学生答案：I get up at half past six every morning.　批改：√
+3. 用所给词的适当形式填空：Look! The children ___ (play) football on the playground.
+   学生答案：play　标准答案：are playing　批改：×

@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "clear_print",
+    "subjects": [
+      "语文"
+    ],
+    "note": "合成样本：清晰印刷、语文 3 题，候选与标注完全一致。非真实材料。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "语文",
+      "question_text": "下列词语中没有错别字的一项是（ ）A. 再接再励 B. 一如既往 C. 穿流不息 D. 黄梁美梦",
+      "student_answer": "A",
+      "correct_answer": "B",
+      "is_wrong": true,
+      "knowledge": [
+        "错别字辨析"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "语文",
+      "question_text": "默写：海内存知己，________。",
+      "student_answer": "天涯若比邻",
+      "correct_answer": "天涯若比邻",
+      "is_wrong": false,
+      "knowledge": [
+        "古诗文默写"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-3",
+      "subject": "语文",
+      "question_text": "修改病句：通过这次活动，使我明白了团结的重要性。",
+      "student_answer": "在句末加上“的精神”",
+      "correct_answer": "删去“通过”或“使”",
+      "is_wrong": true,
+      "knowledge": [
+        "病句修改"
+      ]
+    }
+  ]
+}

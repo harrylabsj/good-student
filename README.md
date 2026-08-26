@@ -7,7 +7,7 @@
 - 未成年人学习数据 local-first：默认只存本机，可导出、可删除。
 - 错题本只能产生「疑似薄弱点」；掌握提升必须由新变式复测证明。
 
-当前进度：**M0（协议与可信底座）**。设计与计划见 `docs/designs/`。
+当前进度：**M0（协议与可信底座）已完成**；**M1（Hermes 垂直切片）基本完成**——插件已在真实 Hermes v0.20.5 装配验证（`hermes plugins doctor --ci` 通过、12 工具注册），端到端验收在真实宿主模型上跑通三科 20 题全闭环（证据：`docs/designs/2026-08-25-m1-e2e-evidence.md`），旧数据迁移器、prompt/Skill 定稿、评测框架（56 题五科合成样本 + `scripts/check_eval_gate.py` D5 门禁）均落地。**M1 剩余出口：用真实匿名错题材料解除 D5 门禁（当前真实材料 0 题，合成样本不计入达标）**。设计与计划见 `docs/designs/`。
 
 ## 快速开始
 
@@ -25,6 +25,12 @@ python3 -m venv .venv
 .venv/bin/good-student confirm <student-id> --all
 .venv/bin/good-student analyze <student-id>
 .venv/bin/good-student plan <student-id>
+
+# 迁移旧 student-companion-agent 数据（只读，先 dry-run）
+.venv/bin/good-student migrate-legacy ~/.local/share/student-companion-agent --dry-run
+
+# 评测提取质量（占位样本 + 可插拔 extractor）
+.venv/bin/python scripts/evaluate_extraction.py evals/samples
 
 # 启动 MCP server（stdio）
 .venv/bin/python -m mcp_server_good_student  # 或见 mcp/server.py

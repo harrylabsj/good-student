@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_type": "text",
+    "source_ref": "evals/samples/blurry-physics",
+    "page_count": 1
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": {
+        "value": "物理",
+        "confidence": 0.58
+      },
+      "question_text": "用刻度尺测量物体长度时，视线应与刻度尺 ___。",
+      "student_answer": "平齐",
+      "correct_answer": "垂直",
+      "is_wrong": true,
+      "knowledge_candidates": [
+        {
+          "label": "长度测量",
+          "confidence": 0.55
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.55,
+      "needs_confirmation": true,
+      "uncertain_fields": [
+        "student_answer"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": {
+        "value": "物理",
+        "confidence": 0.63
+      },
+      "question_text": "1 标准大气压约等于 ___ Pa。",
+      "student_answer": "1.01×10^5",
+      "correct_answer": "1.01×10^5",
+      "is_wrong": false,
+      "knowledge_candidates": [
+        {
+          "label": "大气压强",
+          "confidence": 0.6
+        }
+      ],
+      "error_reason_candidates": [],
+      "extraction_confidence": 0.6,
+      "needs_confirmation": true,
+      "uncertain_fields": []
+    }
+  ],
+  "warnings": [
+    "对焦模糊：第 1 题学生答案转写不确定，建议人工核对。"
+  ]
+}

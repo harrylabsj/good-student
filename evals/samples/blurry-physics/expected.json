@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "synthetic": true,
+    "anonymized": true,
+    "kind": "cropped_blurry_rotated",
+    "subjects": [
+      "物理"
+    ],
+    "note": "合成样本：文本模拟对焦模糊。候选第 1 题学生答案转写错误（“平行”误识为“平齐”），低置信并标注 uncertain_fields。"
+  },
+  "questions": [
+    {
+      "source_locator": "page-1-question-1",
+      "subject": "物理",
+      "question_text": "用刻度尺测量物体长度时，视线应与刻度尺 ___。",
+      "student_answer": "平行",
+      "correct_answer": "垂直",
+      "is_wrong": true,
+      "uncertain_fields": [
+        "student_answer"
+      ],
+      "low_confidence": true,
+      "knowledge": [
+        "长度测量"
+      ]
+    },
+    {
+      "source_locator": "page-1-question-2",
+      "subject": "物理",
+      "question_text": "1 标准大气压约等于 ___ Pa。",
+      "student_answer": "1.01×10^5",
+      "correct_answer": "1.01×10^5",
+      "is_wrong": false,
+      "knowledge": [
+        "大气压强"
+      ]
+    }
+  ]
+}
