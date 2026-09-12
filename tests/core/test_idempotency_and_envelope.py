@@ -11,6 +11,7 @@ def assert_envelope(resp):
 def test_all_responses_use_envelope(service):
     student = make_student(service)
     assert_envelope(service.capabilities())
+    assert_envelope(service.list_students())
     assert_envelope(service.doctor())
     assert_envelope(service.list_pending(student))
     assert_envelope(service.analyze(student))

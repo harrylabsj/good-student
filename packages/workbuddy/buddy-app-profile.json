@@ -1,0 +1,26 @@
+{
+  "format": "good-student-workbuddy-buddy-app-profile/v1",
+  "displayName": {"zh": "海纳·教育专家", "en": "Haina Education Expert"},
+  "description": {
+    "zh": "把错题材料整理成可确认、可解释、可复测的学习行动。",
+    "en": "Turn wrong-question materials into confirmed insights, actionable study plans, and reassessment loops."
+  },
+  "category": "15-Education",
+  "home": {
+    "title": {"zh": "把每一道错题，变成下一步行动", "en": "Turn every wrong question into a next action"},
+    "placeholder": {"zh": "上传错题或告诉我想查看哪位学生的学习记录", "en": "Upload wrong questions or tell me which student's record to review"},
+    "capsules": [
+      {"zh": "先帮我识别这批错题，但让我逐题确认", "en": "Extract this batch, but let me confirm each question first"},
+      {"zh": "查看小明最近的数学薄弱点", "en": "Show Xiaoming's recent math weak points"},
+      {"zh": "根据已确认错题安排本周学习计划", "en": "Create this week's plan from confirmed wrong questions"},
+      {"zh": "记录一次新变式无提示复测", "en": "Record a new-variant reassessment without hints"}
+    ]
+  },
+  "workModes": [
+    {"id": "wrong-book-review", "name": {"zh": "错题诊断", "en": "Wrong-book review"}, "skill": "good-student", "tools": ["good-student"]},
+    {"id": "score-record", "name": {"zh": "成绩记录", "en": "Score tracking"}, "skill": "good-student", "tools": ["good-student"]},
+    {"id": "reassessment", "name": {"zh": "复测闭环", "en": "Reassessment loop"}, "skill": "good-student", "tools": ["good-student"]}
+  ],
+  "market": {"skills": ["good-student"], "connectors": ["good-student"], "experts": []},
+  "privacy": {"dataPolicy": "local-first", "oauthScopes": [], "rawAttachmentUpload": false}
+}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Good-student">
+  <rect width="512" height="512" rx="112" fill="#123B5D"/>
+  <path d="M128 132h256v208H128z" fill="#F4F7FA"/>
+  <path d="M176 184h160M176 232h112M176 280h144" stroke="#2A7F9E" stroke-width="24" stroke-linecap="round"/>
+  <path d="m330 314 28 28 54-62" fill="none" stroke="#F2B84B" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -346,7 +346,7 @@ def test_bridge_data_dir_used_when_no_explicit_dir(tmp_path):
 
 
 def test_register_wires_tools_and_skill(tmp_path, monkeypatch):
-    """用假 ctx 走一遍 register()：12 个工具全部注册，Skill 可发现。"""
+    """用假 ctx 走一遍 register()：全部工具均注册，Skill 可发现。"""
     import json
 
     pkg = hermes_pkg()

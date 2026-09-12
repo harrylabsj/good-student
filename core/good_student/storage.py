@@ -6,6 +6,7 @@
 """
 
 import json
+import os
 import sqlite3
 import threading
 import uuid
@@ -14,7 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from good_student import clock, migrations
+from good_student import clock, knowledge, migrations
 from good_student.errors import GoodStudentError
 from good_student.models import CandidateStatus
 
@@ -31,6 +32,8 @@ class Store:
     def __init__(self, data_dir: Path):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        # 学生学习数据默认仅允许当前操作系统用户访问；既有目录也在打开时收紧权限。
+        os.chmod(self.data_dir, 0o700)
         self.db_path = self.data_dir / "good_student.db"
         self._local = threading.local()
         self._conns: list[sqlite3.Connection] = []
@@ -41,8 +44,19 @@ class Store:
             raise GoodStudentError("persistence_error", f"无法打开数据库：{exc}") from exc
         try:
             migrations.migrate(conn)
+            self._restrict_data_files()
         except sqlite3.DatabaseError as exc:
             raise GoodStudentError("persistence_error", f"迁移失败：{exc}") from exc
+
+    def _restrict_data_files(self) -> None:
+        paths = (
+            self.db_path,
+            self.db_path.with_name(f"{self.db_path.name}-wal"),
+            self.db_path.with_name(f"{self.db_path.name}-shm"),
+        )
+        for path in paths:
+            if path.exists():
+                os.chmod(path, 0o600)
 
     def _connection(self) -> sqlite3.Connection:
         """返回当前线程的连接；首次访问时新建并登记（供 close() 统一关闭）。"""
@@ -75,6 +89,7 @@ class Store:
         try:
             yield self._conn
             self._conn.commit()
+            self._restrict_data_files()
         except Exception:
             # 任意异常都回滚：避免残留未提交事务被下一次 commit() 意外提交（M2 兜底后，
             # _envelope 会接住通用异常，必须保证此时事务已回滚）。
@@ -107,6 +122,49 @@ class Store:
 
     def list_students(self) -> list[dict]:
         return [_row(r) for r in self._conn.execute("SELECT * FROM students ORDER BY created_at")]
+
+    # ---- 学习成绩 ----
+
+    def insert_score_record(self, record: dict) -> dict:
+        record = {"id": _new_id(), "created_at": clock.iso(), **record}
+        self._conn.execute(
+            "INSERT INTO score_records(id, student_id, subject, assessment_name, assessment_type,"
+            " score, max_score, percentage, grade_label, term, class_rank, grade_rank, class_size, assessed_at,"
+            " notes, source_ref, created_at)"
+            " VALUES(:id, :student_id, :subject, :assessment_name, :assessment_type,"
+            " :score, :max_score, :percentage, :grade_label, :term, :class_rank, :grade_rank, :class_size,"
+            " :assessed_at, :notes, :source_ref, :created_at)",
+            record,
+        )
+        return record
+
+    def score_records_for_student(
+        self,
+        student_id: str,
+        subject: str | None = None,
+        assessment_type: str | None = None,
+        term: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+    ) -> list[dict]:
+        clauses = ["student_id = ?"]
+        params: list[Any] = [student_id]
+        for column, value in (("subject", subject), ("assessment_type", assessment_type), ("term", term)):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if from_date is not None:
+            clauses.append("assessed_at >= ?")
+            params.append(from_date)
+        if to_date is not None:
+            clauses.append("assessed_at <= ?")
+            params.append(to_date)
+        rows = self._conn.execute(
+            "SELECT * FROM score_records WHERE " + " AND ".join(clauses)
+            + " ORDER BY assessed_at DESC, created_at DESC",
+            params,
+        )
+        return [_row(r) for r in rows]
 
     # ---- 来源与候选 ----
 
@@ -288,7 +346,7 @@ class Store:
     # ---- 知识组件 ----
 
     def resolve_kc(self, subject_id: str, label: str) -> tuple[dict, bool]:
-        """按 canonical_name 或 alias 匹配；未命中则创建 custom 知识组件（设计 §13.4）。"""
+        """按 canonical_name 或 alias 匹配；其次用知识点种子包归一；都未命中则创建 custom（§13.4）。"""
         row = self._conn.execute(
             "SELECT * FROM knowledge_components WHERE subject_id = ? AND canonical_name = ?",
             (subject_id, label),
@@ -304,6 +362,47 @@ class Store:
                 kc = _row(row)
                 kc["is_custom"] = bool(kc["is_custom"])
                 return kc, False
+        component = knowledge.match(subject_id, label)
+        if component is not None:
+            canonical = component["canonical_name"]
+            row = self._conn.execute(
+                "SELECT * FROM knowledge_components WHERE subject_id = ? AND canonical_name = ?",
+                (subject_id, canonical),
+            ).fetchone()
+            if row:
+                kc = _row(row)
+                kc["is_custom"] = bool(kc["is_custom"])
+                return kc, False
+            pack_id, pack_version = knowledge.pack_origin(subject_id, canonical)
+            kc = {
+                "id": _new_id(),
+                "subject_id": subject_id,
+                "canonical_name": canonical,
+                "aliases": json.dumps(
+                    sorted({label, *component.get("aliases", [])} - {canonical}),
+                    ensure_ascii=False,
+                ),
+                "grade_range": component.get("grade_range"),
+                "curriculum_ref": f"pack:{pack_id}@{pack_version}" if pack_id else None,
+                "prerequisite_ids": json.dumps(
+                    [
+                        p["canonical_name"]
+                        for p in knowledge.prerequisites(subject_id, canonical)
+                    ],
+                    ensure_ascii=False,
+                ),
+                "is_custom": False,
+            }
+            self._conn.execute(
+                "INSERT INTO knowledge_components(id, subject_id, canonical_name, aliases, grade_range,"
+                " curriculum_ref, prerequisite_ids, is_custom, created_at)"
+                " VALUES(:id, :subject_id, :canonical_name, :aliases, :grade_range,"
+                " :curriculum_ref, :prerequisite_ids, 0, :created_at)",
+                {**kc, "created_at": clock.iso()},
+            )
+            kc["aliases"] = json.loads(kc["aliases"])
+            kc["prerequisite_ids"] = json.loads(kc["prerequisite_ids"])
+            return kc, True
         kc = {
             "id": _new_id(),
             "subject_id": subject_id,
@@ -378,14 +477,19 @@ class Store:
     # ---- 学习动作与复测 ----
 
     def insert_action(self, action: dict) -> dict:
-        action = {"id": _new_id(), "created_at": clock.iso(), **action}
+        action = {
+            **action,
+            "id": _new_id(),
+            "created_at": clock.iso(),
+            "review_schedule": json.dumps(action.get("review_schedule", []), ensure_ascii=False),
+        }
         self._conn.execute(
             "INSERT INTO learning_actions(id, student_id, kc_id, error_reason, why, action,"
             " duration_minutes, question_count, due_date, acceptance_criteria, next_step_if_fail,"
-            " reassessment_method, status, created_at)"
+            " reassessment_method, review_schedule, status, created_at)"
             " VALUES(:id, :student_id, :kc_id, :error_reason, :why, :action,"
             " :duration_minutes, :question_count, :due_date, :acceptance_criteria, :next_step_if_fail,"
-            " :reassessment_method, :status, :created_at)",
+            " :reassessment_method, :review_schedule, :status, :created_at)",
             action,
         )
         return action
@@ -394,7 +498,12 @@ class Store:
         rows = self._conn.execute(
             "SELECT * FROM learning_actions WHERE student_id = ? ORDER BY created_at", (student_id,)
         )
-        return [_row(r) for r in rows]
+        result = []
+        for row in rows:
+            item = _row(row)
+            item["review_schedule"] = json.loads(item["review_schedule"])
+            result.append(item)
+        return result
 
     def update_action_status(self, action_id: str, status: str) -> None:
         self._conn.execute(
@@ -449,7 +558,15 @@ class Store:
 
     def student_row_counts(self, student_id: str) -> dict[str, int]:
         counts = {}
-        for table in ("sources", "candidates", "attempts", "weakness_snapshots", "learning_actions", "reassessments"):
+        for table in (
+            "sources",
+            "candidates",
+            "attempts",
+            "weakness_snapshots",
+            "learning_actions",
+            "reassessments",
+            "score_records",
+        ):
             row = self._conn.execute(
                 f"SELECT COUNT(*) AS n FROM {table} WHERE student_id = ?", (student_id,)
             ).fetchone()

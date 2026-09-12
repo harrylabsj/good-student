@@ -1,0 +1,27 @@
+{
+  "pack_id": "k12-math",
+  "version": 1,
+  "subject_id": "数学",
+  "notes": "K12 数学主干知识点种子包。id 为稳定 slug，prerequisite_ids 指向本包内其他节点。",
+  "components": [
+    { "id": "math.number.sense", "canonical_name": "数的认识", "aliases": ["数位", "计数"], "grade_range": "一年级-二年级", "prerequisite_ids": [] },
+    { "id": "math.arithmetic.addsub", "canonical_name": "加减法", "aliases": ["加减运算"], "grade_range": "一年级-二年级", "prerequisite_ids": ["math.number.sense"] },
+    { "id": "math.arithmetic.muldiv", "canonical_name": "乘除法", "aliases": ["乘除运算", "表内乘法"], "grade_range": "二年级-三年级", "prerequisite_ids": ["math.arithmetic.addsub"] },
+    { "id": "math.arithmetic.mixed", "canonical_name": "四则混合运算", "aliases": ["运算顺序", "递等式计算"], "grade_range": "三年级-四年级", "prerequisite_ids": ["math.arithmetic.muldiv"] },
+    { "id": "math.fraction.meaning", "canonical_name": "分数的意义", "aliases": ["分数概念", "分数初步认识"], "grade_range": "三年级-五年级", "prerequisite_ids": ["math.arithmetic.muldiv"] },
+    { "id": "math.fraction.operations", "canonical_name": "分数运算", "aliases": ["分数加减乘除", "分数计算"], "grade_range": "五年级-六年级", "prerequisite_ids": ["math.fraction.meaning"] },
+    { "id": "math.fraction.wordproblems", "canonical_name": "分数应用题", "aliases": ["分数解决问题", "单位1应用题"], "grade_range": "五年级-六年级", "prerequisite_ids": ["math.fraction.operations"] },
+    { "id": "math.decimal.operations", "canonical_name": "小数运算", "aliases": ["小数计算", "小数加减乘除"], "grade_range": "四年级-五年级", "prerequisite_ids": ["math.arithmetic.mixed"] },
+    { "id": "math.percent.wordproblems", "canonical_name": "百分数应用题", "aliases": ["百分比应用题", "折扣利率问题"], "grade_range": "六年级", "prerequisite_ids": ["math.fraction.wordproblems"] },
+    { "id": "math.ratio.proportion", "canonical_name": "比和比例", "aliases": ["比例应用题", "正比例反比例"], "grade_range": "六年级", "prerequisite_ids": ["math.fraction.meaning"] },
+    { "id": "math.geometry.perimeter_area", "canonical_name": "周长与面积", "aliases": ["平面图形面积", "长方形正方形面积"], "grade_range": "三年级-五年级", "prerequisite_ids": ["math.arithmetic.muldiv"] },
+    { "id": "math.geometry.circle", "canonical_name": "圆", "aliases": ["圆的周长", "圆的面积"], "grade_range": "六年级", "prerequisite_ids": ["math.geometry.perimeter_area"] },
+    { "id": "math.geometry.volume", "canonical_name": "立体图形体积", "aliases": ["长方体正方体体积", "表面积"], "grade_range": "五年级-六年级", "prerequisite_ids": ["math.geometry.perimeter_area"] },
+    { "id": "math.equation.basic", "canonical_name": "简易方程", "aliases": ["用字母表示数", "解方程"], "grade_range": "五年级", "prerequisite_ids": ["math.arithmetic.mixed"] },
+    { "id": "math.wordproblems.multistep", "canonical_name": "多步应用题", "aliases": ["两步三步应用题", "归一归总问题"], "grade_range": "三年级-四年级", "prerequisite_ids": ["math.arithmetic.mixed"] },
+    { "id": "math.algebra.linear", "canonical_name": "一元一次方程", "aliases": ["列方程解应用题"], "grade_range": "七年级", "prerequisite_ids": ["math.equation.basic"] },
+    { "id": "math.algebra.function", "canonical_name": "函数初步", "aliases": ["一次函数", "正比例函数"], "grade_range": "八年级", "prerequisite_ids": ["math.algebra.linear"] },
+    { "id": "math.geometry.proof", "canonical_name": "几何证明", "aliases": ["全等三角形", "平行线证明"], "grade_range": "八年级", "prerequisite_ids": ["math.geometry.perimeter_area"] },
+    { "id": "math.statistics.basic", "canonical_name": "统计初步", "aliases": ["平均数", "统计图"], "grade_range": "四年级-六年级", "prerequisite_ids": ["math.arithmetic.mixed"] }
+  ]
+}

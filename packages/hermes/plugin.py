@@ -286,6 +286,15 @@ class GoodStudentPlugin:
     def create_student(self, *args, **kwargs) -> dict:
         return self.service.create_student(*args, **kwargs)
 
+    def list_students(self, *args, **kwargs) -> dict:
+        return self.service.list_students(*args, **kwargs)
+
+    def record_scores(self, *args, **kwargs) -> dict:
+        return self.service.record_scores(*args, **kwargs)
+
+    def list_scores(self, *args, **kwargs) -> dict:
+        return self.service.list_scores(*args, **kwargs)
+
     def ingest_candidates(self, *args, **kwargs) -> dict:
         kwargs.setdefault("host", HOST_NAME)
         return self.service.ingest_candidates(*args, **kwargs)
@@ -304,6 +313,9 @@ class GoodStudentPlugin:
 
     def record_reassessment(self, *args, **kwargs) -> dict:
         return self.service.record_reassessment(*args, **kwargs)
+
+    def weekly_brief(self, *args, **kwargs) -> dict:
+        return self.service.weekly_brief(*args, **kwargs)
 
     def export_student(self, *args, **kwargs) -> dict:
         return self.service.export_student(*args, **kwargs)

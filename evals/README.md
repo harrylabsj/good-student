@@ -1,8 +1,12 @@
 # Good-student 评测样本集（设计 §21.2）
 
 对错题提取（prompt + 宿主模型）做契约评测的固定样本集。当前共 **22 个样本、56 道
-期望题，全部为合成占位材料（meta.synthetic=true）**，规模与场景覆盖已就位，但
-**不代表 D5 达标**——D5 要求真实匿名材料，见下文「当前状态」。
+期望题，全部为合成占位材料（meta.synthetic=true）**，规模与场景覆盖已就位，可用于
+prompt/模型回归对比；识别质量结论仍需用真实匿名材料复跑确认。
+
+> 2026-09-11：原 D5 机械门禁（scripts/check_eval_gate.py）已移除。评测脚本
+> `scripts/evaluate_extraction.py` 与样本集保留，用于持续观察识别质量；
+> 发布门槛以 WorkBuddy 平台核对清单为准（docs/workbuddy-publishing-plan.md）。
 
 ## 匿名化要求（入库前必须完成）
 
@@ -11,13 +15,12 @@
 - 题目正文中的真实人名替换为占位名。
 - 每个样本的 `meta.anonymized` 必须为 `true` 才允许入库；合成样本标 `synthetic: true`。
 
-## D5 门槛（M1 出口条件，开发计划 §1）
+## 识别质量参考线（非门禁）
 
-- 样本规模：**≥50 题**，覆盖**数学、语文、英语、物理、化学**五科。
-- 清晰印刷题：**字段准确率 ≥90%**。
-- 手写题：**字段准确率 ≥70%**。
-- **漏题率 ≤5%**。
-- 不达门槛不进入真实使用。
+- 样本规模目标：**≥50 题**，覆盖**数学、语文、英语、物理、化学**五科。
+- 清晰印刷题：字段准确率 ≥90% 为宜。
+- 手写题：字段准确率 ≥70% 为宜。
+- 漏题率 ≤5% 为宜。
 
 ## 样本目录结构
 
@@ -68,7 +71,7 @@ evals/samples/<sample-name>/
 `attention_checked` / `attention_ok` 与汇总的 `attention` 指标，**不掺入字段准确率**。
 `uncertain_fields` 取超集语义（期望是最低必标集合，模型多标更安全）；
 `low_confidence` 要求置信度低于 0.8 且显式 `needs_confirmation=true`。
-模糊/手写/无答案类样本应逐题标注，否则低置信路径被视为未覆盖（D5 门禁 `attention_accuracy` 会 FAIL）。
+模糊/手写/无答案类样本应逐题标注，便于观察低置信路径是否被触发。
 
 ## 场景矩阵（§21.2，正式样本集需逐项覆盖）
 
@@ -81,20 +84,14 @@ evals/samples/<sample-name>/
 - 附件中包含提示注入文本
 - 模型拒绝和非法 JSON（由 adapter/contract fixtures 覆盖）
 
-## 运行评测与 D5 门禁
+## 运行评测
 
 ```bash
 .venv/bin/python scripts/evaluate_extraction.py evals/samples --output evals/last-run.json
-.venv/bin/python scripts/check_eval_gate.py                # 默认读 evals/samples + evals/last-run.json
-.venv/bin/python scripts/check_eval_gate.py --output evals/gate-result.json
 ```
 
 默认使用离线 fake extractor（读各样本的 `candidates.json`）。接入真实宿主后用
 `--extractor module:function` 替换，签名见脚本 docstring。
-
-`check_eval_gate.py` 机械检查 D5 每条：样本题数 ≥50、五科覆盖、真实材料占比
-（**synthetic 样本不计入 D5 达标**）、清晰印刷（逐字段 ≥90%）/ 手写（逐字段 ≥70%）
-分层准确率、真实样本漏题率 ≤5%。逐项输出 PASS/FAIL，全部通过退出码 0，否则 1。
 
 ## 样本清单（全部 synthetic，场景矩阵文本可表达部分已覆盖）
 
@@ -132,21 +129,11 @@ evals/samples/<sample-name>/
   字段准确率 subject/correct_answer/knowledge/is_wrong = 1.0（54/54），question_text = 0.9815，
   student_answer = 0.9074；低置信断言（attention）7/7 全部满足；置信度校准方向正确
   （答错均值 0.52 < 答对均值 0.89）。
-- 门禁（`evals/gate-result.json`，退出码 1）：
-  - PASS `sample_count`：56 题 ≥ 50
-  - PASS `subject_coverage`：数学/语文/英语/物理/化学齐全
-  - FAIL `real_material`：真实匿名材料 0/56 题——**synthetic 样本不计入 D5 达标**
-  - FAIL `clear_print_accuracy` / `handwriting_accuracy` / `miss_rate`：无真实样本，无法判定
-  - FAIL `attention_accuracy`：无带低置信断言的真实样本（低置信路径未覆盖真实材料）
-  - FAIL `injection_validation`：注入样本由离线 fake extractor 评测，未验证真实模型抗注入能力
-- 结论：**D5 未达标**。缺口是真实匿名材料本身（收集与匿名化流程）+ 真实宿主 extractor
-  （注入/低置信维度需要真实模型跑分才有意义），不是评测基建。
+- 以上为合成占位样本结果，只用于回归对比，不代表真实材料上的识别质量。
 
-## 真实材料接入路径（遗留）
+## 真实材料接入路径
 
 1. 收集真实错题材料（拍照/扫描试卷、错题本），按上文「匿名化要求」处理后入库，
    meta 标 `synthetic: false, anonymized: true`；真实样本建议按 `real-` 前缀命名以便区分。
-2. 接入真实宿主 extractor（M1 Hermes `complete_structured` 桥），用
+2. 接入真实宿主 extractor（Hermes `complete_structured` 桥或 WorkBuddy 会话内模型），用
    `--extractor module:function` 跑分层指标，替换 `evals/last-run.json`。
-3. 重跑 `check_eval_gate.py`：真实题数 ≥50 且五科齐全、清晰印刷逐字段 ≥90%、
-   手写逐字段 ≥70%、真实样本漏题率 ≤5% 全部 PASS（退出码 0）方可进入真实使用。

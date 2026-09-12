@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "good-student"
-version = "0.1.0"
+version = "0.1.1"
 description = "错题诊断与学习行动：Plugin + Skill + 确定性核心（M0：协议与可信底座）"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,9 +19,15 @@ dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.scripts]
 good-student = "good_student.cli:main"
+good-student-mcp = "good_student.mcp_server:main"
 
-[tool.setuptools.packages.find]
-where = ["core"]
+[tool.setuptools]
+packages = ["good_student", "good_student.schemas", "good_student.knowledge_packs"]
+package-dir = {good_student = "core/good_student", "good_student.schemas" = "schemas", "good_student.knowledge_packs" = "knowledge_packs"}
+
+[tool.setuptools.package-data]
+"good_student.schemas" = ["*.json"]
+"good_student.knowledge_packs" = ["*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -4,7 +4,7 @@ import json
 import uuid
 from collections import defaultdict
 
-from good_student import clock
+from good_student import clock, knowledge
 from good_student.models import PASS_ACCURACY_THRESHOLD, REVIEW_INTERVAL_DAYS, WeaknessStatus
 from good_student.storage import Store
 
@@ -83,6 +83,12 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
         link = kc_by_id[kc_id]
         rass = rass_by_kc.get(kc_id, [])
         independent = [r for r in rass if _is_independent(r)]
+        # 旧复测通过只证明当时的表现。出现新的已确认错题后，必须从该错误之后重新累积
+        # 独立复测，不能继续沿用“已掌握”。
+        latest_wrong_at = max((w["attempted_at"] for w in wrongs), default=None)
+        independent_since_latest_wrong = [
+            r for r in independent if latest_wrong_at is None or r["completed_at"] >= latest_wrong_at
+        ]
         evidence_count = len(wrongs) + len(rass)
 
         status = WeaknessStatus.SUSPECTED.value
@@ -103,8 +109,8 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
             confidence = "medium"
             reasons.append("recurrence_after_correction")
 
-        if independent:
-            last = independent[-1]
+        if independent_since_latest_wrong:
+            last = independent_since_latest_wrong[-1]
             if not _passed(last):
                 status = WeaknessStatus.EVIDENCED.value
                 risk = "high"
@@ -114,7 +120,7 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
                 status = WeaknessStatus.IMPROVING.value
                 reasons.append("passed_independent_reassessment")
                 streak = 0
-                for reassessment in reversed(independent):
+                for reassessment in reversed(independent_since_latest_wrong):
                     if _passed(reassessment):
                         streak += 1
                     else:
@@ -180,13 +186,61 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
     risk_order = {"high": 0, "medium": 1, "low": 2}
     weaknesses.sort(key=lambda w: (risk_order[w["risk_level"]], -w["evidence_count"]))
 
+    # 前置知识回溯（知识点种子包）：指出"根子可能在哪"。仅提示，不改变状态判断。
+    weak_by_name = {
+        (w["knowledge_component"]["subject_id"], w["knowledge_component"]["canonical_name"]): w
+        for w in weaknesses
+    }
+    kc_names_in_data = {
+        (link["subject_id"], link["canonical_name"]) for link in kc_links
+    }
+    for weakness in weaknesses:
+        kc = weakness["knowledge_component"]
+        hints = []
+        for prereq in knowledge.prerequisites(kc["subject_id"], kc["canonical_name"]):
+            key = (kc["subject_id"], prereq["canonical_name"])
+            if key in weak_by_name:
+                hints.append(
+                    {
+                        "canonical_name": prereq["canonical_name"],
+                        "status_hint": "prerequisite_also_weak",
+                        "message": (
+                            f"前置知识点「{prereq['canonical_name']}」同样存在薄弱证据，"
+                            "建议先补前置再回本知识点"
+                        ),
+                    }
+                )
+            elif key in kc_names_in_data:
+                hints.append(
+                    {
+                        "canonical_name": prereq["canonical_name"],
+                        "status_hint": "prerequisite_observed_ok",
+                        "message": (
+                            f"前置知识点「{prereq['canonical_name']}」在已有记录中未见薄弱证据"
+                        ),
+                    }
+                )
+            else:
+                hints.append(
+                    {
+                        "canonical_name": prereq["canonical_name"],
+                        "status_hint": "prerequisite_no_evidence",
+                        "message": (
+                            f"前置知识点「{prereq['canonical_name']}」暂无作答证据；"
+                            "若本知识点反复出错，可回头检查前置"
+                        ),
+                    }
+                )
+        weakness["prerequisite_hints"] = hints
+
     subject_totals: dict[str, int] = defaultdict(int)
     subject_kc: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for attempt in used:
         if attempt["is_correct"]:
             continue
+        # 一道题可关联多个知识点；科目总数按作答去重，知识点计数仍分别累积。
+        subject_totals[attempt["subject_id"]] += 1
         for link in links_by_attempt.get(attempt["id"], []):
-            subject_totals[attempt["subject_id"]] += 1
             subject_kc[attempt["subject_id"]][link["kc_id"]] += 1
 
     subjects = []
@@ -222,6 +276,12 @@ def analyze_student(store: Store, student_id: str, now: str | None = None) -> tu
     ]
     if any(w["confidence_level"] == "low" for w in weaknesses):
         caveats.append("存在证据少于两条的低置信判断，请结合复测验证")
+    if any(
+        h["status_hint"] == "prerequisite_also_weak"
+        for w in weaknesses
+        for h in w["prerequisite_hints"]
+    ):
+        caveats.append("存在前置知识点同样薄弱的情况，建议优先补前置再回当前知识点")
 
     result = {
         "schema_version": 1,

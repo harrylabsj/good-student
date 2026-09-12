@@ -1,0 +1,22 @@
+[
+  {
+    "subject": "数学",
+    "assessment_name": "九月月考",
+    "assessment_type": "exam",
+    "score": 92,
+    "max_score": 100,
+    "term": "2026-2027-1",
+    "class_rank": 5,
+    "grade_rank": 18,
+    "class_size": 42,
+    "assessed_at": "2026-09-25T09:00:00+08:00"
+  },
+  {
+    "subject": "语文",
+    "assessment_name": "九月月考",
+    "assessment_type": "exam",
+    "grade_label": "优秀",
+    "term": "2026-2027-1",
+    "assessed_at": "2026-09-25T09:00:00+08:00"
+  }
+]

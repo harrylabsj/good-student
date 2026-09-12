@@ -69,6 +69,34 @@ def test_actions_persisted_with_active_status(service):
     assert rows[0]["error_reason"] == "concept_gap"
 
 
+def test_one_wrong_question_with_two_knowledge_components_generates_two_actions(service):
+    student = make_student(service)
+    question = make_question(reason="memory")
+    question["knowledge_candidates"] = [
+        {"label": "异分母分数加法", "confidence": 0.9},
+        {"label": "分数应用题", "confidence": 0.9},
+    ]
+    ingest_and_confirm(service, student, [question])
+    plan = service.create_plan(student)["data"]
+    assert len(plan["actions"]) == 2
+    assert plan["skipped"] == []
+
+
+def test_memory_review_schedule_persists_and_appears_in_weekly_brief(service):
+    student = make_student(service)
+    ingest_and_confirm(
+        service,
+        student,
+        [make_question(reason="memory")],
+        edits_by_index={0: {"attempted_at": "2026-08-31T10:00:00+00:00"}},
+    )
+    service.create_plan(student, now="2026-09-01T10:00:00+00:00")
+    rows = service.store.actions_for_student(student)
+    assert len(rows[0]["review_schedule"]) == 4
+    brief = service.weekly_brief(student, now="2026-09-01T10:00:00+00:00")["data"]
+    assert any(item["status"] == "scheduled_review" for item in brief["reviews_due_next_7d"])
+
+
 def test_reassessment_validation(service):
     student = make_student(service)
     resp = service.record_reassessment(student, "kc-nope", 1, 1)

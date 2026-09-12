@@ -1,0 +1,55 @@
+{
+  "name": "good-student",
+  "version": "1.0.1",
+  "description": "Wrong-book coach for parents and students: extract, confirm, analyze, plan, and reassess from wrong-question materials.",
+  "author": {
+    "name": "海纳",
+    "email": "1711496337@qq.com"
+  },
+  "agents": ["./agents/wrong-book-coach.md"],
+  "expertType": "agent",
+  "agentName": "wrong-book-coach",
+  "displayName": {
+    "zh": "海纳·教育专家",
+    "en": "Haina Education Expert"
+  },
+  "profession": {
+    "zh": "学生错题本",
+    "en": "Student Wrong-book Notebook"
+  },
+  "displayDescription": {
+    "zh": "拍照上传错题，逐题确认识别结果，提炼薄弱知识点，给出有证据、可复测的查缺补漏建议。",
+    "en": "Snap wrong questions, confirm each extraction, surface weak knowledge points, and get evidence-based, reassessable study advice."
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "15-Education",
+  "defaultInitPrompt": {
+    "zh": "拍下孩子的错题发给我，我帮你整理、分析并安排复习",
+    "en": "Snap your child's wrong questions and I'll organize, analyze, and schedule review"
+  },
+  "plugin": "good-student",
+  "license": "MIT",
+  "keywords": ["wrong-book", "k12", "study-planning", "weakness-analysis"],
+  "tags": [
+    { "zh": "错题本", "en": "Wrong-book" },
+    { "zh": "薄弱点分析", "en": "Weakness Analysis" },
+    { "zh": "学习规划", "en": "Study Planning" }
+  ],
+  "quickPrompts": [
+    {
+      "zh": "拍下孩子的错题发给我，我帮你整理、分析并安排复习",
+      "en": "Snap your child's wrong questions and I'll organize, analyze, and schedule review"
+    },
+    {
+      "zh": "看看孩子最近数学的薄弱点",
+      "en": "Show my child's recent math weak points"
+    },
+    {
+      "zh": "根据已确认错题生成本周查缺补漏计划",
+      "en": "Create this week's gap-filling plan from confirmed wrong questions"
+    }
+  ],
+  "dependencies": {
+    "connectors": ["good-student"]
+  }
+}

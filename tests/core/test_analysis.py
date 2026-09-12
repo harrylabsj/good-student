@@ -125,6 +125,30 @@ def test_mastered_decays_to_review_due(service):
     assert "review_due_by_decay" in w["reason_codes"]
 
 
+def test_new_wrong_answer_after_mastery_resets_reassessment_streak(service):
+    student = make_student(service)
+    ingest_and_confirm(
+        service,
+        student,
+        [make_question()],
+        source_ref="first",
+        edits_by_index={0: {"attempted_at": "2026-08-01T10:00:00"}},
+    )
+    kc_id = service.store.attempt_kc_rows(student)[0]["kc_id"]
+    service.record_reassessment(student, kc_id, 5, 5, completed_at="2026-08-02T10:00:00")
+    service.record_reassessment(student, kc_id, 5, 5, completed_at="2026-08-03T10:00:00")
+    ingest_and_confirm(
+        service,
+        student,
+        [make_question(locator="new-error")],
+        source_ref="later",
+        edits_by_index={0: {"attempted_at": "2026-08-04T10:00:00"}},
+    )
+    w = get_weakness(service.analyze(student, now="2026-08-05T10:00:00") ["data"], "异分母分数加法")
+    assert w["status"] == "suspected_weakness"
+    assert "consecutive_independent_passes" not in w["reason_codes"]
+
+
 def test_hinted_or_same_variant_reassessment_does_not_advance(service):
     student = make_student(service)
     ingest_and_confirm(service, student, [make_question()])
@@ -178,7 +202,20 @@ def test_error_concentration_in_subject_overview(service):
     concentrations = {k["canonical_name"]: k["concentration"] for k in math_overview["knowledge_components"]}
     assert concentrations["异分母分数加法"] == 0.5
     assert concentrations["分数应用题"] == 0.5
-    assert "不是掌握率" in math_overview["note"]
+
+
+def test_multiple_knowledge_components_do_not_inflate_wrong_question_count(service):
+    student = make_student(service)
+    question = make_question()
+    question["knowledge_candidates"] = [
+        {"label": "异分母分数加法", "confidence": 0.9},
+        {"label": "分数应用题", "confidence": 0.9},
+    ]
+    ingest_and_confirm(service, student, [question])
+    overview = service.analyze(student)["data"]["subjects"][0]
+    assert overview["wrong_attempt_count"] == 1
+    assert {item["concentration"] for item in overview["knowledge_components"]} == {1.0}
+    assert "不是掌握率" in overview["note"]
 
 
 def test_plan_completion_does_not_fabricate_mastery(service):

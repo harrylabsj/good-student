@@ -45,7 +45,8 @@
           "reason_codes",
           "last_error_at",
           "last_success_at",
-          "next_review_at"
+          "next_review_at",
+          "prerequisite_hints"
         ],
         "properties": {
           "knowledge_component": {
@@ -106,7 +107,26 @@
           "reason_codes": { "type": "array", "items": { "type": "string" } },
           "last_error_at": { "type": ["string", "null"] },
           "last_success_at": { "type": ["string", "null"] },
-          "next_review_at": { "type": ["string", "null"] }
+          "next_review_at": { "type": ["string", "null"] },
+          "prerequisite_hints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["canonical_name", "status_hint", "message"],
+              "properties": {
+                "canonical_name": { "type": "string" },
+                "status_hint": {
+                  "enum": [
+                    "prerequisite_also_weak",
+                    "prerequisite_observed_ok",
+                    "prerequisite_no_evidence"
+                  ]
+                },
+                "message": { "type": "string" }
+              }
+            }
+          }
         }
       }
     },

@@ -1,4 +1,5 @@
 import sqlite3
+import stat
 
 import pytest
 from conftest import make_student
@@ -24,6 +25,7 @@ def test_init_creates_schema_and_wal(tmp_path):
             "weakness_snapshots",
             "learning_actions",
             "reassessments",
+            "score_records",
         } <= tables
         assert migrations.current_version(store._conn) == migrations.SCHEMA_VERSION_LATEST
         assert store._conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
@@ -36,6 +38,52 @@ def test_reopen_is_idempotent(tmp_path):
     store = Store(tmp_path)  # 不应重复迁移或报错
     try:
         assert migrations.current_version(store._conn) == migrations.SCHEMA_VERSION_LATEST
+    finally:
+        store.close()
+
+
+def test_student_data_files_are_owner_only(tmp_path):
+    store = Store(tmp_path)
+    try:
+        with store.tx():
+            store.insert_student("小明", "五年级", [], [])
+        assert stat.S_IMODE(tmp_path.stat().st_mode) == 0o700
+        assert stat.S_IMODE((tmp_path / "good_student.db").stat().st_mode) == 0o600
+        for suffix in ("-wal", "-shm"):
+            path = tmp_path / f"good_student.db{suffix}"
+            if path.exists():
+                assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    finally:
+        store.close()
+
+
+def test_existing_v2_database_upgrades_to_latest(tmp_path):
+    db_path = tmp_path / "good_student.db"
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    conn.execute("CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    migrations._v1(conn)
+    migrations._v2(conn)
+    conn.execute("INSERT INTO meta(key, value) VALUES('schema_version', '2')")
+    conn.commit()
+    conn.close()
+
+    store = Store(tmp_path)
+    try:
+        assert migrations.current_version(store._conn) == 5
+        table = store._conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='score_records'"
+        ).fetchone()
+        assert table is not None
+        columns = {
+            row["name"] for row in store._conn.execute("PRAGMA table_info(score_records)")
+        }
+        assert "grade_rank" in columns
+        action_columns = {
+            row["name"] for row in store._conn.execute("PRAGMA table_info(learning_actions)")
+        }
+        assert "review_schedule" in action_columns
+        assert store.list_students() == []
     finally:
         store.close()
 

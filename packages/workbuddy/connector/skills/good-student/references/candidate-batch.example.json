@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "source": {"source_type": "image", "source_ref": "当前附件引用", "page_count": 1},
+  "questions": [{
+    "source_locator": "page-1-question-1",
+    "subject": {"value": "数学", "confidence": 0.95},
+    "grade": {"value": "五年级", "confidence": 0.8},
+    "question_text": "计算：3/4 + 1/6 = ?",
+    "student_answer": "4/10",
+    "correct_answer": "11/12",
+    "is_wrong": true,
+    "knowledge_candidates": [{"label": "异分母分数加法", "confidence": 0.9}],
+    "error_reason_candidates": [{"code": "concept_gap", "confidence": 0.7}],
+    "extraction_confidence": 0.9,
+    "needs_confirmation": true,
+    "uncertain_fields": []
+  }],
+  "warnings": []
+}

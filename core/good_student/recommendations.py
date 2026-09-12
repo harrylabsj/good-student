@@ -63,6 +63,9 @@ NEXT_STEP_IF_FAIL = (
     "连续两次未通过建议请老师一起确认知识点与错因"
 )
 
+# memory 错因的间隔复习节奏（天）：1/3/7/14 主动回忆（设计 §15）
+SPACED_REVIEW_DAYS = (1, 3, 7, 14)
+
 
 def build_actions(
     analysis_result: dict, reason_by_kc: dict[str, str], now: str | None = None
@@ -103,20 +106,34 @@ def build_actions(
             f"{ERROR_REASON_LABELS[reason]}；证据编号："
             f"{', '.join(e['attempt_id'][:8] for e in weakness['evidence'] if not e['is_correct'])}"
         )
-        actions.append(
-            {
-                "kc_id": kc["id"],
-                "kc_name": kc["canonical_name"],
-                "subject_id": kc["subject_id"],
-                "error_reason": reason,
-                "why": why,
-                "action": template["action"],
-                "duration_minutes": template["duration_minutes"],
-                "question_count": template["question_count"],
-                "due_date": clock.add_days(now, template["interval_days"]),
-                "reassessment_method": template["reassessment_method"],
-                "acceptance_criteria": template["acceptance_criteria"],
-                "next_step_if_fail": NEXT_STEP_IF_FAIL,
-            }
+        prerequisite_hint = next(
+            (
+                h["message"]
+                for h in weakness.get("prerequisite_hints", [])
+                if h["status_hint"] == "prerequisite_also_weak"
+            ),
+            None,
         )
+        if prerequisite_hint:
+            why += f"；{prerequisite_hint}"
+        action = {
+            "kc_id": kc["id"],
+            "kc_name": kc["canonical_name"],
+            "subject_id": kc["subject_id"],
+            "error_reason": reason,
+            "why": why,
+            "action": template["action"],
+            "duration_minutes": template["duration_minutes"],
+            "question_count": template["question_count"],
+            "due_date": clock.add_days(now, template["interval_days"]),
+            "reassessment_method": template["reassessment_method"],
+            "acceptance_criteria": template["acceptance_criteria"],
+            "next_step_if_fail": NEXT_STEP_IF_FAIL,
+            "prerequisite_hint": prerequisite_hint,
+        }
+        if reason == "memory":
+            action["review_schedule"] = [
+                clock.add_days(now, day) for day in SPACED_REVIEW_DAYS
+            ]
+        actions.append(action)
     return actions, skipped

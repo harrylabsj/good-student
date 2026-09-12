@@ -1,0 +1,16 @@
+{
+  "pack_id": "k12-english",
+  "version": 1,
+  "subject_id": "英语",
+  "notes": "K12 英语主干知识点种子包。id 为稳定 slug，prerequisite_ids 指向本包内其他节点。",
+  "components": [
+    { "id": "eng.phonics", "canonical_name": "语音与拼读", "aliases": ["自然拼读", "音标"], "grade_range": "一年级-三年级", "prerequisite_ids": [] },
+    { "id": "eng.vocab", "canonical_name": "词汇", "aliases": ["单词拼写", "词义辨析", "词形转换"], "grade_range": "三年级-九年级", "prerequisite_ids": ["eng.phonics"] },
+    { "id": "eng.grammar.tense", "canonical_name": "时态", "aliases": ["一般现在时", "一般过去时", "现在进行时", "一般将来时"], "grade_range": "四年级-八年级", "prerequisite_ids": ["eng.vocab"] },
+    { "id": "eng.grammar.sentence", "canonical_name": "句型结构", "aliases": ["陈述句疑问句", "there be句型", "感叹句"], "grade_range": "四年级-七年级", "prerequisite_ids": ["eng.vocab"] },
+    { "id": "eng.grammar.parts", "canonical_name": "词法", "aliases": ["名词单复数", "冠词", "介词", "形容词比较级"], "grade_range": "四年级-八年级", "prerequisite_ids": ["eng.vocab"] },
+    { "id": "eng.reading", "canonical_name": "阅读理解", "aliases": ["阅读细节", "阅读推断", "完形填空"], "grade_range": "五年级-九年级", "prerequisite_ids": ["eng.vocab", "eng.grammar.tense"] },
+    { "id": "eng.writing", "canonical_name": "书面表达", "aliases": ["英语作文", "应用文写作"], "grade_range": "六年级-九年级", "prerequisite_ids": ["eng.grammar.sentence", "eng.grammar.tense"] },
+    { "id": "eng.cloze", "canonical_name": "完形与语法填空", "aliases": ["语法填空", "首字母填空"], "grade_range": "七年级-九年级", "prerequisite_ids": ["eng.grammar.parts", "eng.grammar.tense"] }
+  ]
+}

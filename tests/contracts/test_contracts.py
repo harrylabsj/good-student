@@ -13,13 +13,17 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 EXPECTED_TOOLS = {
     "good_student_capabilities",
+    "good_student_list_students",
     "good_student_create_student",
+    "good_student_record_scores",
+    "good_student_list_scores",
     "good_student_ingest_candidates",
     "good_student_list_pending",
     "good_student_confirm_questions",
     "good_student_analyze",
     "good_student_create_plan",
     "good_student_record_reassessment",
+    "good_student_weekly_brief",
     "good_student_export_student",
     "good_student_delete_student",
     "good_student_doctor",
@@ -28,7 +32,7 @@ EXPECTED_TOOLS = {
 
 def test_tool_list_matches_design_section16():
     assert set(TOOLS) == EXPECTED_TOOLS
-    assert len(TOOLS) == 11
+    assert len(TOOLS) == 15
 
 
 def test_example_batch_validates_against_schema():

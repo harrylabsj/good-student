@@ -22,6 +22,7 @@ config_schema:
     description: "显式声明宿主无视觉能力时置 false，插件将走文本降级路径"
 provides_tools:
   - good_student_capabilities
+  - good_student_list_students
   - good_student_create_student
   - good_student_ingest_candidates
   - good_student_list_pending

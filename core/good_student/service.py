@@ -15,7 +15,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from good_student import __version__, analysis, clock, recommendations, validation
+from good_student import __version__, analysis, clock, knowledge, recommendations, validation
 from good_student import migrate_legacy as legacy_migrator
 from good_student.errors import GoodStudentError
 from good_student.models import (
@@ -31,13 +31,17 @@ from good_student.storage import Store
 
 TOOLS = [
     "good_student_capabilities",
+    "good_student_list_students",
     "good_student_create_student",
+    "good_student_record_scores",
+    "good_student_list_scores",
     "good_student_ingest_candidates",
     "good_student_list_pending",
     "good_student_confirm_questions",
     "good_student_analyze",
     "good_student_create_plan",
     "good_student_record_reassessment",
+    "good_student_weekly_brief",
     "good_student_export_student",
     "good_student_delete_student",
     "good_student_doctor",
@@ -185,6 +189,203 @@ class Service:
             return self._idempotent_call(idempotency_key, _do)
 
         return run()
+
+    @_envelope
+    def list_students(self) -> dict:
+        """列出可继续使用的本机学生档案，不返回错题或成绩等学习内容。"""
+        return _ok(
+            {
+                "students": [
+                    {
+                        "id": student["id"],
+                        "display_name": student["display_name"],
+                        "grade": student["grade"],
+                        "active_subjects": json.loads(student["active_subjects"]),
+                        "created_at": student["created_at"],
+                    }
+                    for student in self.store.list_students()
+                ]
+            }
+        )
+
+    @_envelope
+    def record_scores(
+        self,
+        student_id: str,
+        records: list[dict],
+        idempotency_key: str | None = None,
+    ) -> dict:
+        """原子保存一批结构化成绩；任一项非法则整批不写入。"""
+        _require_student(self.store, student_id)
+        if not isinstance(records, list) or not records:
+            raise GoodStudentError("invalid_argument", "records 必须为非空数组")
+        if len(records) > 200:
+            raise GoodStudentError("invalid_argument", "单次最多记录 200 条成绩")
+
+        allowed_types = {"exam", "quiz", "homework", "practice", "other"}
+        normalized: list[dict] = []
+        for index, raw in enumerate(records):
+            if not isinstance(raw, dict):
+                raise GoodStudentError("invalid_argument", f"records[{index}] 必须为对象")
+            subject = raw.get("subject")
+            assessment_name = raw.get("assessment_name")
+            if not isinstance(subject, str) or not subject.strip() or len(subject) > 64:
+                raise GoodStudentError("invalid_argument", f"records[{index}].subject 必须为 1-64 个字符")
+            if not isinstance(assessment_name, str) or not assessment_name.strip() or len(assessment_name) > 128:
+                raise GoodStudentError(
+                    "invalid_argument", f"records[{index}].assessment_name 必须为 1-128 个字符"
+                )
+            assessment_type = raw.get("assessment_type", "exam")
+            if assessment_type not in allowed_types:
+                raise GoodStudentError(
+                    "invalid_argument",
+                    f"records[{index}].assessment_type 必须为 exam/quiz/homework/practice/other",
+                )
+            score = raw.get("score")
+            max_score = raw.get("max_score")
+            grade_label = raw.get("grade_label")
+            if score is None and (not isinstance(grade_label, str) or not grade_label.strip()):
+                raise GoodStudentError(
+                    "invalid_argument", f"records[{index}] 至少提供 score 或 grade_label 之一"
+                )
+            for field, value in (("score", score), ("max_score", max_score)):
+                if value is not None and (
+                    not isinstance(value, (int, float)) or isinstance(value, bool)
+                ):
+                    raise GoodStudentError("invalid_argument", f"records[{index}].{field} 必须为数字")
+            if score is not None and score < 0:
+                raise GoodStudentError("invalid_argument", f"records[{index}].score 不得小于 0")
+            if max_score is not None and max_score <= 0:
+                raise GoodStudentError("invalid_argument", f"records[{index}].max_score 必须大于 0")
+            if score is not None and max_score is not None and score > max_score:
+                raise GoodStudentError("invalid_argument", f"records[{index}].score 不得大于 max_score")
+            class_rank = raw.get("class_rank")
+            grade_rank = raw.get("grade_rank")
+            class_size = raw.get("class_size")
+            for field, value in (
+                ("class_rank", class_rank),
+                ("grade_rank", grade_rank),
+                ("class_size", class_size),
+            ):
+                if value is not None and (
+                    not isinstance(value, int) or isinstance(value, bool) or value < 1
+                ):
+                    raise GoodStudentError("invalid_argument", f"records[{index}].{field} 必须为正整数")
+            if class_rank is not None and class_size is not None and class_rank > class_size:
+                raise GoodStudentError(
+                    "invalid_argument", f"records[{index}].class_rank 不得大于 class_size"
+                )
+            optional_strings: dict[str, int] = {
+                "grade_label": 64,
+                "term": 64,
+                "notes": 1000,
+                "source_ref": 512,
+            }
+            for field, limit in optional_strings.items():
+                value = raw.get(field)
+                if value is not None and (not isinstance(value, str) or len(value) > limit):
+                    raise GoodStudentError(
+                        "invalid_argument",
+                        f"records[{index}].{field} 必须为不超过 {limit} 个字符的字符串",
+                    )
+            try:
+                assessed_at = clock.to_utc_iso(raw["assessed_at"])
+            except KeyError as exc:
+                raise GoodStudentError(
+                    "invalid_argument", f"records[{index}].assessed_at 为必填项"
+                ) from exc
+            except (TypeError, ValueError) as exc:
+                raise GoodStudentError(
+                    "invalid_argument", f"records[{index}].assessed_at 不是合法时间：{exc}"
+                ) from exc
+            normalized.append(
+                {
+                    "student_id": student_id,
+                    "subject": subject.strip(),
+                    "assessment_name": assessment_name.strip(),
+                    "assessment_type": assessment_type,
+                    "score": float(score) if score is not None else None,
+                    "max_score": float(max_score) if max_score is not None else None,
+                    "percentage": round(float(score) / float(max_score) * 100, 2)
+                    if score is not None and max_score is not None
+                    else None,
+                    "grade_label": grade_label.strip()
+                    if isinstance(grade_label, str) and grade_label.strip()
+                    else None,
+                    "term": raw.get("term") or None,
+                    "class_rank": class_rank,
+                    "grade_rank": grade_rank,
+                    "class_size": class_size,
+                    "assessed_at": assessed_at,
+                    "notes": raw.get("notes") or None,
+                    "source_ref": raw.get("source_ref") or None,
+                }
+            )
+
+        def _do() -> dict:
+            with self.store.tx():
+                inserted = [self.store.insert_score_record(record) for record in normalized]
+                self.store.log_event(
+                    "scores_recorded", {"student_id": student_id, "count": len(inserted)}
+                )
+                resp = _ok({"student_id": student_id, "records": inserted})
+                if idempotency_key:
+                    self.store.idempotency_put(idempotency_key, resp)
+                return resp
+
+        return self._idempotent_call(idempotency_key, _do)
+
+    @_envelope
+    def list_scores(
+        self,
+        student_id: str,
+        subject: str | None = None,
+        assessment_type: str | None = None,
+        term: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+    ) -> dict:
+        _require_student(self.store, student_id)
+        if assessment_type is not None and assessment_type not in {
+            "exam",
+            "quiz",
+            "homework",
+            "practice",
+            "other",
+        }:
+            raise GoodStudentError("invalid_argument", "assessment_type 筛选值不合法")
+        try:
+            start = clock.to_utc_iso(from_date) if from_date else None
+            end = clock.to_utc_iso(to_date) if to_date else None
+        except (TypeError, ValueError) as exc:
+            raise GoodStudentError("invalid_argument", f"日期筛选不是合法时间：{exc}") from exc
+        if start and end and start > end:
+            raise GoodStudentError("invalid_argument", "from_date 不得晚于 to_date")
+        records = self.store.score_records_for_student(
+            student_id, subject, assessment_type, term, start, end
+        )
+        by_subject: dict[str, dict[str, Any]] = {}
+        for record in records:
+            bucket = by_subject.setdefault(
+                record["subject"], {"count": 0, "percentage_count": 0, "percentage_total": 0.0}
+            )
+            bucket["count"] += 1
+            if record["percentage"] is not None:
+                bucket["percentage_count"] += 1
+                bucket["percentage_total"] += record["percentage"]
+        summary = {}
+        for name, bucket in by_subject.items():
+            percentage_count = bucket["percentage_count"]
+            summary[name] = {
+                "count": bucket["count"],
+                "average_percentage": round(bucket["percentage_total"] / percentage_count, 2)
+                if percentage_count
+                else None,
+                "percentage_count": percentage_count,
+            }
+        return _ok(
+            {"student_id": student_id, "records": records, "summary_by_subject": summary}
+        )
 
     @_envelope
     def ingest_candidates(
@@ -499,7 +700,7 @@ class Service:
         reason_by_kc = self._dominant_reasons(student_id)
 
         def _do() -> dict:
-            actions, skipped = recommendations.build_actions(result, reason_by_kc)
+            actions, skipped = recommendations.build_actions(result, reason_by_kc, now=now)
             with self.store.tx():
                 rows = [
                     self.store.insert_action(
@@ -515,6 +716,7 @@ class Service:
                             "acceptance_criteria": action["acceptance_criteria"],
                             "next_step_if_fail": action["next_step_if_fail"],
                             "reassessment_method": action["reassessment_method"],
+                            "review_schedule": action.get("review_schedule", []),
                             "status": "active",
                         }
                     )
@@ -538,15 +740,15 @@ class Service:
 
     def _dominant_reasons(self, student_id: str) -> dict[str, str]:
         counts: dict[str, dict[str, int]] = {}
-        links = {link["attempt_id"]: link for link in self.store.attempt_kc_rows(student_id)}
+        links_by_attempt: dict[str, list[dict]] = {}
+        for link in self.store.attempt_kc_rows(student_id):
+            links_by_attempt.setdefault(link["attempt_id"], []).append(link)
         for attempt in self.store.attempts_for_student(student_id):
             if attempt["is_correct"] or attempt["error_reason"] == "unknown":
                 continue
-            link = links.get(attempt["id"])
-            if not link:
-                continue
-            reasons = counts.setdefault(link["kc_id"], {})
-            reasons[attempt["error_reason"]] = reasons.get(attempt["error_reason"], 0) + 1
+            for link in links_by_attempt.get(attempt["id"], []):
+                reasons = counts.setdefault(link["kc_id"], {})
+                reasons[attempt["error_reason"]] = reasons.get(attempt["error_reason"], 0) + 1
         return {
             kc_id: max(reasons.items(), key=lambda kv: kv[1])[0] for kc_id, reasons in counts.items()
         }
@@ -640,6 +842,114 @@ class Service:
         return self._idempotent_call(idempotency_key, _do)
 
     @_envelope
+    def weekly_brief(self, student_id: str, now: str | None = None) -> dict:
+        """每周家长简报（只读）：本周新增错题、薄弱点状态、待办动作、到期复习与复测完成情况。"""
+        student = _require_student(self.store, student_id)
+        self._expire_now()
+        now = now or clock.iso()
+        week_ago = clock.add_days(now, -7)
+        next_week = clock.add_days(now, 7)
+
+        attempts = [
+            a for a in self.store.attempts_for_student(student_id)
+            if week_ago <= a["attempted_at"] <= now
+        ]
+        links = self.store.attempt_kc_rows(student_id)
+        kc_name = {link["kc_id"]: link["canonical_name"] for link in links}
+        new_wrong_by_subject: dict[str, int] = {}
+        for attempt in attempts:
+            if not attempt["is_correct"]:
+                new_wrong_by_subject[attempt["subject_id"]] = (
+                    new_wrong_by_subject.get(attempt["subject_id"], 0) + 1
+                )
+
+        result, warnings = analysis.analyze_student(self.store, student_id, now)
+        weakness_brief = [
+            {
+                "kc_name": w["knowledge_component"]["canonical_name"],
+                "subject_id": w["knowledge_component"]["subject_id"],
+                "status": w["status"],
+                "confidence_level": w["confidence_level"],
+                "evidence_count": w["evidence_count"],
+                "prerequisite_hints": [
+                    h for h in w["prerequisite_hints"]
+                    if h["status_hint"] == "prerequisite_also_weak"
+                ],
+            }
+            for w in result["weaknesses"]
+        ]
+
+        active_actions = [
+            {
+                "id": a["id"],
+                "kc_name": kc_name.get(a["kc_id"]),
+                "action": a["action"],
+                "due_date": a["due_date"],
+                "overdue": bool(a["due_date"] and a["due_date"] < now),
+            }
+            for a in self.store.actions_for_student(student_id)
+            if a["status"] == "active"
+        ]
+
+        reviews_due = [
+            {
+                "kc_name": kc_name.get(s["kc_id"]),
+                "status": s["status"],
+                "next_review_at": s["next_review_at"],
+            }
+            for s in self.store.current_snapshots(student_id)
+            if s["next_review_at"] and s["next_review_at"] <= next_week
+        ]
+        for action in self.store.actions_for_student(student_id):
+            if action["status"] != "active":
+                continue
+            for scheduled_at in action["review_schedule"]:
+                if now <= scheduled_at <= next_week:
+                    reviews_due.append(
+                        {
+                            "kc_name": kc_name.get(action["kc_id"]),
+                            "status": "scheduled_review",
+                            "next_review_at": scheduled_at,
+                        }
+                    )
+
+        week_reassessments = [
+            r for r in self.store.reassessments_for_student(student_id)
+            if week_ago <= r["completed_at"] <= now
+        ]
+        week_scores = [
+            r for r in self.store.score_records_for_student(student_id)
+            if week_ago <= r["assessed_at"] <= now
+        ]
+
+        with self.store.tx():
+            self.store.log_event("weekly_brief_generated", {"student_id": student_id})
+        return _ok(
+            {
+                "student_id": student_id,
+                "display_name": student["display_name"],
+                "window": {"from": week_ago, "to": now},
+                "new_wrong_count": sum(new_wrong_by_subject.values()),
+                "new_wrong_by_subject": new_wrong_by_subject,
+                "weakness_summary": result["summary"],
+                "weaknesses": weakness_brief,
+                "active_actions": active_actions,
+                "reviews_due_next_7d": reviews_due,
+                "reassessments_this_week": {
+                    "count": len(week_reassessments),
+                    "passed": sum(
+                        1 for r in week_reassessments
+                        if r["total_count"] and r["correct_count"] / r["total_count"]
+                        >= PASS_ACCURACY_THRESHOLD
+                    ),
+                },
+                "scores_this_week": len(week_scores),
+                "note": "错题本只反映错误集中度，不代表掌握率；状态提升以新变式无提示复测为准",
+            },
+            warnings=warnings or None,
+        )
+
+    @_envelope
     def export_student(self, student_id: str) -> dict:
         student = _require_student(self.store, student_id)
         attempts = self.store.attempts_for_student(student_id)
@@ -703,6 +1013,7 @@ class Service:
                 "snapshots": self.store.current_snapshots(student_id),
                 "learning_actions": self.store.actions_for_student(student_id),
                 "reassessments": self.store.reassessments_for_student(student_id),
+                "score_records": self.store.score_records_for_student(student_id),
             }
         )
 
@@ -758,4 +1069,11 @@ class Service:
                 checks.append({"check": f"schema:{name}", "ok": True, "detail": "loaded"})
             except (OSError, json.JSONDecodeError) as exc:
                 checks.append({"check": f"schema:{name}", "ok": False, "detail": str(exc)})
+        try:
+            packs = knowledge.load_packs()
+            checks.append(
+                {"check": "knowledge_packs", "ok": True, "detail": f"{len(packs)} packs loaded"}
+            )
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            checks.append({"check": "knowledge_packs", "ok": False, "detail": str(exc)})
         return _ok({"ok": all(c["ok"] for c in checks), "checks": checks})

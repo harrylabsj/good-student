@@ -1,0 +1,17 @@
+{
+  "pack_id": "k12-chinese",
+  "version": 1,
+  "subject_id": "语文",
+  "notes": "K12 语文主干知识点种子包。id 为稳定 slug，prerequisite_ids 指向本包内其他节点。",
+  "components": [
+    { "id": "chn.pinyin", "canonical_name": "拼音", "aliases": ["汉语拼音", "看拼音写汉字"], "grade_range": "一年级-二年级", "prerequisite_ids": [] },
+    { "id": "chn.characters", "canonical_name": "识字与写字", "aliases": ["生字词", "字形辨析"], "grade_range": "一年级-三年级", "prerequisite_ids": ["chn.pinyin"] },
+    { "id": "chn.words", "canonical_name": "词语理解与运用", "aliases": ["近义词反义词", "词语搭配", "成语运用"], "grade_range": "二年级-五年级", "prerequisite_ids": ["chn.characters"] },
+    { "id": "chn.sentence", "canonical_name": "句子运用", "aliases": ["句式转换", "修改病句", "扩句缩句"], "grade_range": "三年级-六年级", "prerequisite_ids": ["chn.words"] },
+    { "id": "chn.reading.detail", "canonical_name": "阅读-信息提取", "aliases": ["阅读理解-找信息", "细节理解"], "grade_range": "三年级-六年级", "prerequisite_ids": ["chn.words"] },
+    { "id": "chn.reading.inference", "canonical_name": "阅读-理解推断", "aliases": ["中心思想", "段落大意", "人物形象分析"], "grade_range": "四年级-六年级", "prerequisite_ids": ["chn.reading.detail"] },
+    { "id": "chn.writing.narrative", "canonical_name": "记叙文写作", "aliases": ["写人记事作文", "看图写话"], "grade_range": "三年级-六年级", "prerequisite_ids": ["chn.sentence"] },
+    { "id": "chn.classical", "canonical_name": "古诗文", "aliases": ["古诗默写", "文言文实词", "文言文翻译"], "grade_range": "三年级-九年级", "prerequisite_ids": ["chn.words"] },
+    { "id": "chn.argumentative", "canonical_name": "议论文阅读与写作", "aliases": ["议论文三要素", "论点论据"], "grade_range": "八年级-九年级", "prerequisite_ids": ["chn.reading.inference"] }
+  ]
+}

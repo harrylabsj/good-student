@@ -15,6 +15,11 @@ TOOL_SCHEMAS = {
         "description": "能力发现与健康检查：返回版本、工具清单、宿主能力与数据目录。首次使用前先调用。",
         "parameters": {"type": "object", "properties": {}},
     },
+    "good_student_list_students": {
+        "name": "good_student_list_students",
+        "description": "列出已有学生档案及其 UUID，用于在新会话中继续使用既有学习记录（只读）。",
+        "parameters": {"type": "object", "properties": {}},
+    },
     "good_student_create_student": {
         "name": "good_student_create_student",
         "description": "创建学生档案（UUID 主键，display_name 只是展示名）。多个孩子必须分开建档。",
@@ -28,6 +33,66 @@ TOOL_SCHEMAS = {
                 "idempotency_key": _IDEMPOTENCY,
             },
             "required": ["display_name"],
+        },
+    },
+    "good_student_record_scores": {
+        "name": "good_student_record_scores",
+        "description": "原子保存一批结构化学习成绩；任一项非法时整批不写入。支持数值分数或等级成绩。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "student_id": _STUDENT_ID,
+                "records": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "subject": {"type": "string", "description": "学科，如 数学"},
+                            "assessment_name": {"type": "string", "description": "考试或作业名称"},
+                            "assessment_type": {
+                                "type": "string",
+                                "enum": ["exam", "quiz", "homework", "practice", "other"],
+                                "default": "exam",
+                            },
+                            "score": {"type": "number", "minimum": 0},
+                            "max_score": {"type": "number", "exclusiveMinimum": 0},
+                            "grade_label": {"type": "string", "description": "等级成绩，如 A、优秀"},
+                            "term": {"type": "string", "description": "学期，如 2026-2027-1"},
+                            "class_rank": {"type": "integer", "minimum": 1},
+                            "grade_rank": {"type": "integer", "minimum": 1},
+                            "class_size": {"type": "integer", "minimum": 1},
+                            "assessed_at": {"type": "string", "description": "考试时间，ISO 8601"},
+                            "notes": {"type": "string"},
+                            "source_ref": {"type": "string", "description": "成绩单或来源引用"},
+                        },
+                        "required": ["subject", "assessment_name", "assessed_at"],
+                        "anyOf": [{"required": ["score"]}, {"required": ["grade_label"]}],
+                    },
+                },
+                "idempotency_key": _IDEMPOTENCY,
+            },
+            "required": ["student_id", "records"],
+        },
+    },
+    "good_student_list_scores": {
+        "name": "good_student_list_scores",
+        "description": "查询结构化成绩及分科汇总，可按学科、类型、学期和时间区间筛选。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "student_id": _STUDENT_ID,
+                "subject": {"type": "string"},
+                "assessment_type": {
+                    "type": "string",
+                    "enum": ["exam", "quiz", "homework", "practice", "other"],
+                },
+                "term": {"type": "string"},
+                "from_date": {"type": "string", "description": "起始时间，ISO 8601"},
+                "to_date": {"type": "string", "description": "结束时间，ISO 8601"},
+            },
+            "required": ["student_id"],
         },
     },
     "good_student_extract_attachments": {
@@ -163,6 +228,18 @@ TOOL_SCHEMAS = {
                 "idempotency_key": _IDEMPOTENCY,
             },
             "required": ["student_id", "kc_id", "correct_count", "total_count"],
+        },
+    },
+    "good_student_weekly_brief": {
+        "name": "good_student_weekly_brief",
+        "description": (
+            "生成每周家长简报（只读）：本周新增错题、薄弱点状态汇总、待办动作（含逾期）、"
+            "未来 7 天到期复习与本周复测完成情况。"
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"student_id": _STUDENT_ID},
+            "required": ["student_id"],
         },
     },
     "good_student_export_student": {

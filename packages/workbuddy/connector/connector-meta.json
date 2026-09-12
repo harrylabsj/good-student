@@ -1,0 +1,26 @@
+{
+  "name": "Good-student",
+  "name_zh": "Good-student 错题教练",
+  "name_en": "Good-student Wrong-book Coach",
+  "description": "把错题材料整理成可确认、可解释、可复测的学习行动。",
+  "description_zh": "面向家长和学生，完成错题识别、确认、薄弱点分析、学习计划与复测闭环。数据保存在本机，无需登录。",
+  "description_en": "For parents and students: extract, confirm, analyze, plan, and reassess from wrong-question materials. Local-first, no sign-in.",
+  "source": "good-student",
+  "type": "cli",
+  "version": "0.2.1",
+  "minWorkbuddyVersion": "5.0.0",
+  "examples_zh": [
+    "帮我整理这批错题，先让我确认识别结果",
+    "查看小明最近数学的疑似薄弱点并安排本周计划",
+    "记录这次新变式复测结果",
+    "生成本周的家长简报",
+    "导出小明的全部学习数据"
+  ],
+  "examples_en": [
+    "Extract this batch, but let me confirm each question first",
+    "Show Xiaoming's recent math weak points and create a weekly plan",
+    "Record the result of this new-variant reassessment",
+    "Generate this week's parent briefing",
+    "Export all learning data for Xiaoming"
+  ]
+}

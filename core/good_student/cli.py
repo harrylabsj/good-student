@@ -19,11 +19,24 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("capabilities")
+    sub.add_parser("list-students", help="列出已有学生档案，继续使用时复制对应 student_id")
 
     p = sub.add_parser("create-student")
     p.add_argument("display_name")
     p.add_argument("--grade", default=None)
     p.add_argument("--subjects", default=None, help="逗号分隔，如 数学,语文")
+
+    p = sub.add_parser("record-scores", help="从 JSON 文件原子写入一批结构化成绩")
+    p.add_argument("student_id")
+    p.add_argument("records_file", help="成绩数组 JSON 文件")
+
+    p = sub.add_parser("list-scores", help="查询结构化成绩及分科汇总")
+    p.add_argument("student_id")
+    p.add_argument("--subject", default=None)
+    p.add_argument("--assessment-type", default=None)
+    p.add_argument("--term", default=None)
+    p.add_argument("--from-date", default=None)
+    p.add_argument("--to-date", default=None)
 
     p = sub.add_parser("ingest")
     p.add_argument("student_id")
@@ -41,6 +54,7 @@ def main(argv: list[str] | None = None) -> None:
 
     sub.add_parser("analyze").add_argument("student_id")
     sub.add_parser("plan").add_argument("student_id")
+    sub.add_parser("weekly-brief", help="生成每周家长简报（只读）").add_argument("student_id")
 
     p = sub.add_parser("reassess")
     p.add_argument("student_id")
@@ -69,9 +83,26 @@ def main(argv: list[str] | None = None) -> None:
     try:
         if args.command == "capabilities":
             _print(service.capabilities())
+        elif args.command == "list-students":
+            _print(service.list_students())
         elif args.command == "create-student":
             subjects = [s.strip() for s in args.subjects.split(",") if s.strip()] if args.subjects else []
             _print(service.create_student(args.display_name, args.grade, subjects))
+        elif args.command == "record-scores":
+            with open(args.records_file, encoding="utf-8") as fh:
+                records = json.load(fh)
+            _print(service.record_scores(args.student_id, records))
+        elif args.command == "list-scores":
+            _print(
+                service.list_scores(
+                    args.student_id,
+                    subject=args.subject,
+                    assessment_type=args.assessment_type,
+                    term=args.term,
+                    from_date=args.from_date,
+                    to_date=args.to_date,
+                )
+            )
         elif args.command == "ingest":
             with open(args.batch_file, encoding="utf-8") as fh:
                 batch = json.load(fh)
@@ -111,6 +142,8 @@ def main(argv: list[str] | None = None) -> None:
             _print(service.analyze(args.student_id))
         elif args.command == "plan":
             _print(service.create_plan(args.student_id))
+        elif args.command == "weekly-brief":
+            _print(service.weekly_brief(args.student_id))
         elif args.command == "reassess":
             _print(
                 service.record_reassessment(

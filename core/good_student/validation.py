@@ -2,6 +2,8 @@
 
 import json
 import math
+import os
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
@@ -21,9 +23,24 @@ _validators: dict[str, Draft202012Validator] = {}
 
 
 def load_schema(name: str) -> dict[str, Any]:
-    path = SCHEMA_DIR / SCHEMA_FILES[name]
-    with open(path, encoding="utf-8") as fh:
-        return json.load(fh)
+    filename = SCHEMA_FILES[name]
+    candidates = [
+        Path(os.environ["GOOD_STUDENT_SCHEMA_DIR"]) if os.environ.get("GOOD_STUDENT_SCHEMA_DIR") else None,
+        SCHEMA_DIR,
+    ]
+    for directory in candidates:
+        if directory is None:
+            continue
+        path = directory / filename
+        if path.is_file():
+            with open(path, encoding="utf-8") as fh:
+                return json.load(fh)
+    try:
+        return json.loads(files("good_student.schemas").joinpath(filename).read_text(encoding="utf-8"))
+    except (ModuleNotFoundError, FileNotFoundError):
+        pass
+    searched = ", ".join(str(path) for path in candidates if path is not None)
+    raise FileNotFoundError(f"Good-student Schema 未找到：{filename}；已搜索 {searched}")
 
 
 def _validator(name: str) -> Draft202012Validator:

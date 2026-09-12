@@ -83,7 +83,7 @@ hermes plugins doctor packages/hermes --ci     # 仓库内开发副本
    被接受（本地 jsonschema 校验），当前 provider（deepseek/SCNet-Max）未拒绝复杂 Schema。
 4. **工具返回**——已验证：处理器返回 envelope JSON 字符串，模型侧可见并可解析；
    `ctx.register_tool(name=, toolset=, schema=, handler=)` 与 `ctx.register_skill(name, path)`
-   均被 doctor 确认注册成功（12 工具 + 1 Skill）。注意：`hermes chat -t good-student`
+   均被 doctor 确认注册成功（14 工具 + 1 Skill）。注意：`hermes chat -t good-student`
    会打印 "Unknown toolsets: good-student" 警告（CLI 的 toolset 校验只认静态表，
    插件 toolset 在注册表后期才可见），但工具实际可调用，警告为表面现象。
 5. **数据目录**——已验证：未使用 `plugin_storage`；`GOOD_STUDENT_DATA` 环境变量在

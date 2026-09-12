@@ -1,7 +1,7 @@
 """评测脚本框架单测（设计 §21.2）：用 fake extractor 跑合成样本集，验证指标计算。
 
-样本集当前全部为合成占位样本（meta.synthetic=true），不代表 D5 达标；
-D5 门禁由 scripts/check_eval_gate.py 与 tests/contracts/test_check_eval_gate.py 覆盖。
+样本集当前全部为合成占位样本（meta.synthetic=true），用于回归对比，不代表真实材料
+上的识别质量。原 D5 机械门禁已于 2026-09-11 移除。
 """
 
 import importlib.util

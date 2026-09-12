@@ -70,13 +70,17 @@ def register(ctx: Any) -> None:
 
     dispatch = {
         "good_student_capabilities": plugin.capabilities,
+        "good_student_list_students": plugin.list_students,
         "good_student_create_student": plugin.create_student,
+        "good_student_record_scores": plugin.record_scores,
+        "good_student_list_scores": plugin.list_scores,
         "good_student_ingest_candidates": plugin.ingest_candidates,
         "good_student_list_pending": plugin.list_pending,
         "good_student_confirm_questions": plugin.confirm_questions,
         "good_student_analyze": plugin.analyze,
         "good_student_create_plan": plugin.create_plan,
         "good_student_record_reassessment": plugin.record_reassessment,
+        "good_student_weekly_brief": plugin.weekly_brief,
         "good_student_export_student": plugin.export_student,
         "good_student_delete_student": plugin.delete_student,
         "good_student_doctor": plugin.doctor,

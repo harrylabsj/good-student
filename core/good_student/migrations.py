@@ -190,9 +190,58 @@ def _v2(conn: sqlite3.Connection) -> None:
         conn.execute(ddl)
 
 
-MIGRATIONS: list[tuple[int, Migrator]] = [(1, _v1), (2, _v2)]
+_DDL_V3: list[str] = [
+    """
+    CREATE TABLE score_records(
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      subject TEXT NOT NULL,
+      assessment_name TEXT NOT NULL,
+      assessment_type TEXT NOT NULL DEFAULT 'exam',
+      score REAL,
+      max_score REAL,
+      percentage REAL,
+      grade_label TEXT,
+      term TEXT,
+      class_rank INTEGER,
+      class_size INTEGER,
+      assessed_at TEXT NOT NULL,
+      notes TEXT,
+      source_ref TEXT,
+      created_at TEXT NOT NULL,
+      CHECK(assessment_type IN ('exam', 'quiz', 'homework', 'practice', 'other')),
+      CHECK(score IS NOT NULL OR grade_label IS NOT NULL),
+      CHECK(max_score IS NULL OR max_score > 0),
+      CHECK(score IS NULL OR score >= 0),
+      CHECK(percentage IS NULL OR (percentage >= 0 AND percentage <= 100)),
+      CHECK(class_rank IS NULL OR class_rank > 0),
+      CHECK(class_size IS NULL OR class_size > 0),
+      CHECK(class_rank IS NULL OR class_size IS NULL OR class_rank <= class_size)
+    )
+    """,
+    "CREATE INDEX idx_score_records_student_date ON score_records(student_id, assessed_at)",
+    "CREATE INDEX idx_score_records_student_subject ON score_records(student_id, subject)",
+]
 
-SCHEMA_VERSION_LATEST = 2
+
+def _v3(conn: sqlite3.Connection) -> None:
+    for ddl in _DDL_V3:
+        conn.execute(ddl)
+
+
+def _v4(conn: sqlite3.Connection) -> None:
+    """将年级排名从备注提升为独立结构化字段。"""
+    conn.execute("ALTER TABLE score_records ADD COLUMN grade_rank INTEGER")
+
+
+def _v5(conn: sqlite3.Connection) -> None:
+    """保存动作的间隔复习排期，供后续简报和客户端重启后继续使用。"""
+    conn.execute("ALTER TABLE learning_actions ADD COLUMN review_schedule TEXT NOT NULL DEFAULT '[]'")
+
+
+MIGRATIONS: list[tuple[int, Migrator]] = [(1, _v1), (2, _v2), (3, _v3), (4, _v4), (5, _v5)]
+
+SCHEMA_VERSION_LATEST = 5
 
 
 def current_version(conn: sqlite3.Connection) -> int:
@@ -221,4 +270,3 @@ def migrate(conn: sqlite3.Connection) -> None:
         except sqlite3.Error as exc:  # 迁移失败整体回滚，不留下半成品结构
             conn.rollback()
             raise sqlite3.DatabaseError(f"migration {target} failed: {exc}") from exc
-
