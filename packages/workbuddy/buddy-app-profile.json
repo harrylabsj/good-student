@@ -21,6 +21,6 @@
     {"id": "score-record", "name": {"zh": "成绩记录", "en": "Score tracking"}, "skill": "good-student", "tools": ["good-student"]},
     {"id": "reassessment", "name": {"zh": "复测闭环", "en": "Reassessment loop"}, "skill": "good-student", "tools": ["good-student"]}
   ],
-  "market": {"skills": ["good-student"], "connectors": ["good-student"], "experts": []},
+  "market": {"skills": ["good-student"], "connectors": [], "experts": ["good-student"]},
   "privacy": {"dataPolicy": "local-first", "oauthScopes": [], "rawAttachmentUpload": false}
 }

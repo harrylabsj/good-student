@@ -72,8 +72,14 @@ def test_built_archives_have_expected_roots(tmp_path):
     with zipfile.ZipFile(archives[2]) as archive:
         names = set(archive.namelist())
         assert ".codebuddy-plugin/plugin.json" in names
+        assert ".mcp.json" in names
+        assert "cli.json" in names
         assert "agents/wrong-book-coach.md" in names
         assert "avatars/expert.png" in names
+        assert "skills/good-student/SKILL.md" in names
+        assert any(n.startswith("pkg/") and n.endswith(".whl") for n in names)
+        assert ".mcp.template.json" not in names
+        assert "cli.template.json" not in names
 
 
 def test_expert_manifest_matches_platform_constraints():
@@ -87,7 +93,9 @@ def test_expert_manifest_matches_platform_constraints():
     assert len(plugin["quickPrompts"]) == 3
     assert plugin["defaultInitPrompt"] == plugin["quickPrompts"][0]
     assert plugin["categoryId"] == "15-Education"
-    assert "good-student" in plugin["dependencies"]["connectors"]
+    assert plugin["version"] == "1.1.0"
+    assert plugin["dependencies"] == {"mcpServers": "./.mcp.json"}
+    assert plugin["skills"] == ["./skills/good-student"]
     assert "token" not in json.dumps(plugin).lower()
     avatar = WORKBUDDY / "expert" / plugin["avatar"]
     assert avatar.is_file() and avatar.stat().st_size < 500 * 1024

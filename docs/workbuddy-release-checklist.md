@@ -1,7 +1,7 @@
 # Good-student × WorkBuddy 上线检查清单
 
-- 版本：v1.0（2026-09-11）
-- 结构：CLI + Skill 连接器 → 错题教练专家（依赖连接器）→（可选）Buddy 应用
+- 版本：v1.1（2026-09-14）
+- 结构：独立专家（内嵌 Skill + stdio MCP + wheel）→（可选）Buddy 应用
 - 原则：不发布 PyPI、不用 uvx、不申请 OAuth、学生数据只在本机
 
 ---
@@ -19,7 +19,7 @@
 | 包 | 路径 | 提交到 |
 | --- | --- | --- |
 | 连接器 | `packages/workbuddy/dist/good-student-workbuddy-connector.zip` | 开放平台 → 连接器 |
-| 专家 | `packages/workbuddy/dist/good-student-workbuddy-expert.zip` | 开放平台 → 专家（连接器上架后） |
+| 专家 | `packages/workbuddy/dist/good-student-workbuddy-expert.zip` | 开放平台 → 专家（主路径） |
 | Skill | `packages/workbuddy/dist/good-student-workbuddy-skill.zip` | 开放平台 → 技能（可同步，非主路径） |
 
 ## 第 1 步：开发者入驻（一次性）
@@ -27,13 +27,13 @@
 - [ ] 完成企业认证或管理员实名认证（身份证 + 实名手机号 + 邮箱 + 人脸核身）
 - [ ] 准备好开发者昵称（对外展示，需过命名规范校验）
 
-## 第 2 步：连接器提交与安装验证（关键风险点）
+## 第 2 步：专家内嵌 MCP 安装验证（关键风险点）
 
-- [ ] 上传连接器 ZIP，观察是否解析失败（失败则按 cli.json / 目录结构排错，或邮件
+- [ ] 上传专家 ZIP，观察是否解析失败（失败则按 `.mcp.json` / `cli.json` 排错，或邮件
       openworkbuddy@tencent.com）
-- [ ] **在真实 WorkBuddy 客户端点「连接」**，重点验证：`init` 的相对路径
-      `python -m pip install --upgrade ./pkg/good_student-0.1.0-py3-none-any.whl`
-      是否以连接器解压目录为工作目录执行
+- [ ] **在真实 WorkBuddy 客户端召唤专家并连接内嵌 MCP**，重点验证：`preAuth: "cli"`
+      能执行 `python -m pip install --upgrade './pkg/good_student-0.1.1-py3-none-any.whl[mcp]'`
+      是否以专家包解压目录为工作目录执行
   - ✅ 成功 → 继续
   - ❌ 失败（找不到 ./pkg 路径）→ 启用备选：把 wheel 发到包源，init 改为
     `python -m pip install --upgrade good-student==0.1.0`，重打包重提交
@@ -53,11 +53,11 @@
       标准节点"分数应用题"（is_custom=false），分析带 prerequisite_hints
 - [ ] 数据落点确认：`~/.good-student/` 下有 SQLite 文件，无数据外流
 
-## 第 4 步：专家提交（连接器上架后）
+## 第 4 步：专家提交
 
 - [ ] 上传专家 ZIP，确认平台字段解析：分类 15-Education、中文描述 40–50 字、
       3 标签、3 快捷提示词、头像显示正常
-- [ ] **实测依赖引导**：未连接状态下召唤「错题教练」→ 弹出 good-student 连接器
+- [ ] **实测内嵌 MCP 引导**：未连接状态下召唤「学生错题本」→ 弹出包内 MCP
       引导卡片 → 完成连接 → 进入对话
 - [ ] 已连接状态下再次召唤，不重复引导
 - [ ] 专家首条消息符合人设：先问哪位学生、说明家长同意与候选确认机制
@@ -97,5 +97,5 @@
 | wheel 隔离安装 + 全流程冒烟（干净 venv，相对路径 `./pkg/`） | ✅ 本机通过 |
 | 真实 WorkBuddy 客户端安装验证（init 相对路径） | ⬜ 待做——**全清单唯一技术未知项** |
 | 开发者入驻认证 | ⬜ 待做 |
-| 专家依赖引导实测 | ⬜ 待做（连接器上架后） |
+| 专家内嵌 MCP 引导实测 | ⬜ 待做（专家 1.1.0 上传后） |
 | D5 机械门禁 | 已移除（识别质量参考线见 `evals/README.md`） |

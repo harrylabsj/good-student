@@ -1,0 +1,25 @@
+{
+  "preAuth": "cli",
+  "mcpServers": {
+    "good-student": {
+      "type": "stdio",
+      "command": "good-student-mcp",
+      "args": [],
+      "timeout": 30000,
+      "x-workbuddy": {
+        "displayName": {
+          "zh": "学生错题本本地工具",
+          "en": "Student Wrong-book Local Tools"
+        },
+        "description": {
+          "zh": "在本机保存、确认和分析错题，并生成学习计划与复测记录。",
+          "en": "Store, confirm, and analyze wrong questions locally, then create plans and reassessments."
+        },
+        "icon": "./avatars/expert.png",
+        "auth": {
+          "type": "none"
+        }
+      }
+    }
+  }
+}

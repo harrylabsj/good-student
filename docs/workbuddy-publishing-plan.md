@@ -1,29 +1,34 @@
 ---
 title: Good-student WorkBuddy 开放平台发布规划
-status: ready-for-submission-pending-client-verification
-version: 2.0
-date: 2026-09-11
+status: embedded-mcp-pending-platform-verification
+version: 3.0
+date: 2026-09-14
 ---
 
 # 结论
 
-## 2026-09-11「专家 + 连接器」定稿（v2.0）
+## 2026-09-14 独立专家包（v3.0）
 
-首发采用 **连接器 → 专家** 结构，连接器为 **CLI + Skill** 方案：
+首发采用 **专家内嵌 MCP** 结构：
 
-1. 提交 `packages/workbuddy/connector/`（CLI + 内嵌 Skill）。`cli.json` 声明平台托管
-   Python 运行时（5.0.0+），安装命令直接 `pip install` **连接器包内置的 wheel**
-   （`pkg/*.whl`，打包时由 `scripts/build_workbuddy_packages.py` 从仓库构建注入）。
-   **不需要发布 PyPI、不需要 uvx、不需要用户机器预装 Python**。
-2. 连接器上架后提交 `packages/workbuddy/expert/`「错题教练」专家；`plugin.json` 通过
-   `dependencies.connectors: ["good-student"]` 声明依赖，召唤专家时平台自动引导连接。
-3. `packages/workbuddy/skill/` 独立 Skill 保留为可复用资产，非首发主路径。
-4. Buddy 应用降级为可选的第三阶段，复用已验证的专家与连接器。
+1. `plugin.json` 用 `dependencies.mcpServers: "./.mcp.json"` 声明内嵌 MCP，并预加载
+   `skills/good-student`。
+2. `.mcp.json` 用 `preAuth: "cli"` 触发同目录 `cli.json`；后者声明 WorkBuddy 托管 Python
+   3.11，并从专家包 `pkg/` 安装 `good_student-*.whl[mcp]`。
+3. 安装后通过 `good-student-mcp` 启动本地 stdio MCP。学生数据仍保存在本机。
+4. `connector/` 保留为兼容方案，但专家不依赖市场连接器；已提交的连接器申请应撤回。
 
 本方案不申请 OAuth、不写死 Token、不上传原始附件；学生数据保存在用户本机
 `~/.good-student/` SQLite。原 D5 机械门禁已移除（识别质量参考线见 `evals/README.md`）。
 
 ## 已完成的仓库改造
+
+### 2026-09-14 v3（专家内嵌 MCP）
+
+- 专家版本升级到 1.1.0，移除 `dependencies.connectors`，改为内嵌 `.mcp.json`。
+- 构建时向专家 ZIP 注入 `cli.json`、核心 wheel 和完整 Skill。
+- 构建校验覆盖单一 stdio MCP、无认证、三平台安装命令、wheel 与 Skill 完整性。
+- 已在干净虚拟环境从 ZIP 内 wheel 安装 `[mcp]` extra，doctor 全绿。
 
 ### 2026-09-11 v2（CLI 连接器 + 去 D5）
 
@@ -74,11 +79,11 @@ date: 2026-09-11
 
 上传 `good-student-workbuddy-skill.zip`。市场字段建议直接使用 Skill 的 YAML frontmatter；中文定位为“把错题材料整理成可确认、可解释、可复测的学习行动”。
 
-### 专家（Expert）
+### 专家（Expert，首发主路径）
 
 上传 `good-student-workbuddy-expert.zip`。平台字段以 `expert/.codebuddy-plugin/plugin.json`
-为准：分类 `15-Education`，`dependencies.connectors` 声明依赖 `good-student` 连接器——
-用户召唤专家时平台弹出内联引导卡片完成连接。**专家必须在连接器上架后再提交**。
+为准：分类 `15-Education`，`dependencies.mcpServers` 指向包内 `.mcp.json`。用户召唤专家时
+平台弹出内嵌 MCP 连接卡片，不依赖连接器市场审核状态。
 
 ### Buddy 应用（可选，第三阶段）
 
@@ -97,7 +102,7 @@ JSON 应在创建草稿后保存并回填仓库。
    逐条跑 4 中 3 英场景胶囊、召唤专家时的依赖引导卡片、拍照上传 → 逐题确认 → 分析 →
    计划 → 复测全流程、导出与两段式删除。
 4. 只提交 ZIP，不提交本机数据库、`.env`、Client Secret、真实学生材料或日志。
-5. 连接器审核通过后提交专家审核；专家通过后再（可选）提交 Buddy 应用审核。
+5. 专家可独立提交审核；专家通过后再（可选）提交 Buddy 应用审核。
 
 ## 不建议事项
 

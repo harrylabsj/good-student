@@ -1,0 +1,11 @@
+{
+  "runtime": {
+    "type": "python",
+    "version": "3.11"
+  },
+  "init": {
+    "darwin": "python -m pip install --upgrade './pkg/${WHEEL_FILENAME}[mcp]'",
+    "linux": "python -m pip install --upgrade './pkg/${WHEEL_FILENAME}[mcp]'",
+    "win32": "python -m pip install --upgrade \"./pkg/${WHEEL_FILENAME}[mcp]\""
+  }
+}

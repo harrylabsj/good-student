@@ -8,8 +8,8 @@ Archives:
   (``pkg/*.whl``); ``cli.json`` declares WorkBuddy's managed Python runtime so
   installation runs ``python -m pip install ./pkg/<wheel>`` — no PyPI
   publishing and no uvx required. (jsonschema 等运行依赖由平台托管 pip 解析。)
-- Expert archive: WorkBuddy expert (agent) package that depends on the
-  good-student connector via ``dependencies.connectors``.
+- Expert archive: independently runnable WorkBuddy expert with an embedded
+  Skill, stdio MCP declaration, managed-Python installer, and bundled wheel.
 
 The script validates the expert package against WorkBuddy platform constraints
 (display description length, tag/quick prompt counts, avatar size, dependency
@@ -105,6 +105,31 @@ def stage_connector(work_dir: Path) -> Path:
     return staged
 
 
+def stage_expert(work_dir: Path) -> Path:
+    """暂存可独立运行的专家包，注入内嵌 Skill、MCP 配置和核心 wheel。"""
+    staged = work_dir / "expert"
+    shutil.copytree(WORKBUDDY / "expert", staged)
+
+    wheel = _build_wheel(work_dir)
+    pkg = staged / "pkg"
+    pkg.mkdir(exist_ok=True)
+    shutil.copy2(wheel, pkg / wheel.name)
+
+    skill_source = WORKBUDDY / "connector" / "skills" / "good-student"
+    shutil.copytree(skill_source, staged / "skills" / "good-student")
+
+    cli_template = (staged / "cli.template.json").read_text(encoding="utf-8")
+    (staged / "cli.json").write_text(
+        cli_template.replace("${WHEEL_FILENAME}", wheel.name), encoding="utf-8"
+    )
+    (staged / "cli.template.json").unlink()
+    (staged / ".mcp.json").write_text(
+        (staged / ".mcp.template.json").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (staged / ".mcp.template.json").unlink()
+    return staged
+
+
 def validate_expert(source: Path) -> None:
     """Validate the expert package against WorkBuddy platform rules."""
     plugin_path = source / ".codebuddy-plugin" / "plugin.json"
@@ -137,9 +162,35 @@ def validate_expert(source: Path) -> None:
            "defaultInitPrompt 必须与第一条 quickPrompt 一致")
 
     _check(plugin.get("categoryId", "").startswith("15-"), "categoryId 应为 15-Education")
-    connectors = plugin.get("dependencies", {}).get("connectors", [])
-    _check("good-student" in connectors,
-           "dependencies.connectors 必须包含 good-student 连接器")
+    dependencies = plugin.get("dependencies", {})
+    _check(dependencies.get("mcpServers") == "./.mcp.json",
+           "dependencies.mcpServers 必须指向内嵌 .mcp.json")
+    _check(not dependencies.get("connectors"), "独立专家包不得依赖市场连接器")
+    _check(plugin.get("skills") == ["./skills/good-student"],
+           "专家必须预加载内嵌 good-student Skill")
+
+    mcp = json.loads((source / ".mcp.json").read_text(encoding="utf-8"))
+    _check(mcp.get("preAuth") == "cli", ".mcp.json 必须通过 preAuth=cli 安装内嵌 wheel")
+    servers = mcp.get("mcpServers", {})
+    _check(set(servers) == {"good-student"}, ".mcp.json 必须仅声明 good-student Server")
+    server = servers["good-student"]
+    _check(server.get("type") == "stdio", "内嵌 MCP 必须使用 stdio")
+    _check(server.get("command") == "good-student-mcp", "MCP 启动命令必须为 good-student-mcp")
+    _check(server.get("x-workbuddy", {}).get("auth", {}).get("type") == "none",
+           "本地 MCP 必须声明无需认证")
+
+    cli = json.loads((source / "cli.json").read_text(encoding="utf-8"))
+    _check(cli.get("runtime", {}).get("type") == "python", "专家 cli.json 必须声明 Python 运行时")
+    wheels = list((source / "pkg").glob("*.whl"))
+    _check(len(wheels) == 1, "专家 pkg/ 必须有且仅有一个内置 wheel")
+    for platform, command in cli.get("init", {}).items():
+        _check(platform in {"darwin", "linux", "win32"}, f"未知平台：{platform}")
+        _check(f"./pkg/{wheels[0].name}[mcp]" in command,
+               f"init.{platform} 必须安装内置 wheel 的 mcp extra")
+    _check(set(cli.get("init", {})) == {"darwin", "linux", "win32"},
+           "专家 cli.json init 必须覆盖 darwin/linux/win32")
+    _check((source / "skills" / "good-student" / "SKILL.md").is_file(),
+           "专家包缺少内嵌 good-student Skill")
 
     avatar = source / plugin.get("avatar", "")
     _check(avatar.is_file(), f"缺少头像 {plugin.get('avatar')}")
@@ -192,13 +243,14 @@ def validate_skill(source: Path) -> None:
 def build(output_dir: Path) -> list[Path]:
     with tempfile.TemporaryDirectory() as tmp:
         staged_connector = stage_connector(Path(tmp))
+        staged_expert = stage_expert(Path(tmp))
         validate_skill(WORKBUDDY / "skill")
         validate_connector(staged_connector)
-        validate_expert(WORKBUDDY / "expert")
+        validate_expert(staged_expert)
         archives = [
             (WORKBUDDY / "skill", output_dir / "good-student-workbuddy-skill.zip"),
             (staged_connector, output_dir / "good-student-workbuddy-connector.zip"),
-            (WORKBUDDY / "expert", output_dir / "good-student-workbuddy-expert.zip"),
+            (staged_expert, output_dir / "good-student-workbuddy-expert.zip"),
         ]
         built = []
         for source, destination in archives:
