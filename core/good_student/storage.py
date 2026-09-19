@@ -17,7 +17,7 @@ from typing import Any
 
 from good_student import clock, knowledge, migrations
 from good_student.errors import GoodStudentError
-from good_student.models import CandidateStatus
+from good_student.models import IDEMPOTENCY_TTL_DAYS, CandidateStatus
 
 
 def _new_id() -> str:
@@ -282,11 +282,21 @@ class Store:
             candidates.append(candidate)
         return candidates
 
-    def update_candidate_status(self, candidate_id: str, status: CandidateStatus) -> None:
-        self._conn.execute(
-            "UPDATE candidates SET status = ?, updated_at = ? WHERE id = ?",
-            (status.value, clock.iso(), candidate_id),
+    def transition_candidate(
+        self, candidate_id: str, status: CandidateStatus, now: str | None = None
+    ) -> bool:
+        """条件状态推进：仅当候选仍为 needs_confirmation 且未过期时生效，返回是否成功。
+
+        WHERE 在取到写锁时重新求值，两个并发确认只有一个能成功（WAL 快照读不会
+        误判对方未提交的状态）。
+        """
+        ts = now or clock.iso()
+        cursor = self._conn.execute(
+            "UPDATE candidates SET status = ?, updated_at = ?"
+            " WHERE id = ? AND status = ? AND expires_at > ?",
+            (status.value, ts, candidate_id, CandidateStatus.NEEDS_CONFIRMATION.value, ts),
         )
+        return cursor.rowcount == 1
 
     def expire_candidates(self, now: str) -> int:
         cursor = self._conn.execute(
@@ -510,6 +520,16 @@ class Store:
             "UPDATE learning_actions SET status = ? WHERE id = ?", (status, action_id)
         )
 
+    def get_action(self, action_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM learning_actions WHERE id = ?", (action_id,)
+        ).fetchone()
+        if not row:
+            return None
+        action = _row(row)
+        action["review_schedule"] = json.loads(action["review_schedule"])
+        return action
+
     def insert_reassessment(self, reassessment: dict) -> dict:
         reassessment = {"id": _new_id(), "created_at": clock.iso(), **reassessment}
         self._conn.execute(
@@ -551,9 +571,14 @@ class Store:
         return json.loads(row["response"]) if row else None
 
     def idempotency_put(self, key: str, response: dict) -> None:
+        now = clock.iso()
         self._conn.execute(
             "INSERT OR REPLACE INTO idempotency(key, response, created_at) VALUES(?, ?, ?)",
-            (key, json.dumps(response, ensure_ascii=False), clock.iso()),
+            (key, json.dumps(response, ensure_ascii=False), now),
+        )
+        self._conn.execute(
+            "DELETE FROM idempotency WHERE created_at < ?",
+            (clock.add_days(now, -IDEMPOTENCY_TTL_DAYS),),
         )
 
     def student_row_counts(self, student_id: str) -> dict[str, int]:

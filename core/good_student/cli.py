@@ -13,6 +13,16 @@ def _print(result: dict) -> None:
         sys.exit(1)
 
 
+def _load_json_file(path: str):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError as exc:
+        raise SystemExit(f"文件不存在：{path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"JSON 解析失败：{path}（{exc}）") from exc
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="good-student", description="Good-student M0 CLI")
     parser.add_argument("--data-dir", default=None, help="数据目录（默认 $GOOD_STUDENT_DATA 或 ~/.good-student）")
@@ -89,8 +99,7 @@ def main(argv: list[str] | None = None) -> None:
             subjects = [s.strip() for s in args.subjects.split(",") if s.strip()] if args.subjects else []
             _print(service.create_student(args.display_name, args.grade, subjects))
         elif args.command == "record-scores":
-            with open(args.records_file, encoding="utf-8") as fh:
-                records = json.load(fh)
+            records = _load_json_file(args.records_file)
             _print(service.record_scores(args.student_id, records))
         elif args.command == "list-scores":
             _print(
@@ -104,8 +113,7 @@ def main(argv: list[str] | None = None) -> None:
                 )
             )
         elif args.command == "ingest":
-            with open(args.batch_file, encoding="utf-8") as fh:
-                batch = json.load(fh)
+            batch = _load_json_file(args.batch_file)
             _print(
                 service.ingest_candidates(
                     args.student_id, batch, host=args.host, captured_at=args.captured_at
@@ -115,7 +123,10 @@ def main(argv: list[str] | None = None) -> None:
             _print(service.list_pending(args.student_id))
         elif args.command == "confirm":
             if args.items:
-                items = json.loads(args.items)
+                try:
+                    items = json.loads(args.items)
+                except json.JSONDecodeError as exc:
+                    raise SystemExit(f"--items 不是合法 JSON：{exc}") from exc
             elif args.all:
                 pending = service.list_pending(args.student_id)
                 if not pending["ok"]:

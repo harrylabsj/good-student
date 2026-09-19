@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,7 @@ from typing import Any
 PACKS_DIR = Path(__file__).resolve().parents[2] / "knowledge_packs"
 
 _cache: dict[str, Any] | None = None
+_lock = threading.Lock()
 
 
 def _read_pack(path: Path) -> dict:
@@ -43,31 +45,32 @@ def _validate_pack(pack: dict, origin: str) -> None:
 def load_packs(force_reload: bool = False) -> list[dict]:
     """加载全部知识点包；失败时抛出 ValueError/FileNotFoundError。"""
     global _cache
-    if _cache is not None and not force_reload:
-        return _cache["packs"]
+    with _lock:
+        if _cache is not None and not force_reload:
+            return _cache["packs"]
 
-    packs: dict[str, dict] = {}
-    override = os.environ.get("GOOD_STUDENT_KNOWLEDGE_DIR")
-    dirs = [Path(override)] if override else []
-    dirs.append(PACKS_DIR)
-    for directory in dirs:
-        if not directory.is_dir():
-            continue
-        for path in sorted(directory.glob("*.json")):
-            packs[path.name] = _read_pack(path)
-    try:
-        resource_dir = files("good_student.knowledge_packs")
-        for entry in sorted(resource_dir.iterdir()):
-            if entry.name.endswith(".json") and entry.name not in packs:
-                packs[entry.name] = json.loads(entry.read_text(encoding="utf-8"))
-    except (ModuleNotFoundError, FileNotFoundError):
-        pass
+        packs: dict[str, dict] = {}
+        override = os.environ.get("GOOD_STUDENT_KNOWLEDGE_DIR")
+        dirs = [Path(override)] if override else []
+        dirs.append(PACKS_DIR)
+        for directory in dirs:
+            if not directory.is_dir():
+                continue
+            for path in sorted(directory.glob("*.json")):
+                packs[path.name] = _read_pack(path)
+        try:
+            resource_dir = files("good_student.knowledge_packs")
+            for entry in sorted(resource_dir.iterdir()):
+                if entry.name.endswith(".json") and entry.name not in packs:
+                    packs[entry.name] = json.loads(entry.read_text(encoding="utf-8"))
+        except (ModuleNotFoundError, FileNotFoundError):
+            pass
 
-    result = list(packs.values())
-    for pack in result:
-        _validate_pack(pack, pack.get("pack_id", "?"))
-    _cache = {"packs": result, "by_subject": _index(result)}
-    return result
+        result = list(packs.values())
+        for pack in result:
+            _validate_pack(pack, pack.get("pack_id", "?"))
+        _cache = {"packs": result, "by_subject": _index(result)}
+        return result
 
 
 def _index(packs: list[dict]) -> dict[str, dict[str, Any]]:

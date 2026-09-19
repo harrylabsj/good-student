@@ -5,7 +5,7 @@ unknown 错因不生成强结论，转为请求家长/老师确认。
 """
 
 from good_student import clock
-from good_student.models import ERROR_REASON_LABELS
+from good_student.models import ACTIONABLE_WEAKNESS_STATUSES, ERROR_REASON_LABELS
 
 TEMPLATES: dict[str, dict] = {
     "concept_gap": {
@@ -72,12 +72,11 @@ def build_actions(
 ) -> tuple[list[dict], list[dict]]:
     """从分析结果生成学习动作。返回 (actions, skipped)；skipped 为需要先确认错因的知识点。"""
     now = now or clock.iso()
-    actionable = {"suspected_weakness", "evidenced_weakness", "review_due"}
     actions: list[dict] = []
     skipped: list[dict] = []
 
     for weakness in analysis_result["weaknesses"]:
-        if weakness["status"] not in actionable:
+        if weakness["status"] not in ACTIONABLE_WEAKNESS_STATUSES:
             continue
         kc = weakness["knowledge_component"]
         reason = reason_by_kc.get(kc["id"])

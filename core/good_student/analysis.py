@@ -5,16 +5,15 @@ import uuid
 from collections import defaultdict
 
 from good_student import clock, knowledge
-from good_student.models import PASS_ACCURACY_THRESHOLD, REVIEW_INTERVAL_DAYS, WeaknessStatus
+from good_student.models import (
+    ACTIONABLE_WEAKNESS_STATUSES,
+    PASS_ACCURACY_THRESHOLD,
+    REVIEW_INTERVAL_DAYS,
+    WeaknessStatus,
+)
 from good_student.storage import Store
 
 MODEL_VERSION = "rules-v1"
-
-_ACTIONABLE = {
-    WeaknessStatus.SUSPECTED.value,
-    WeaknessStatus.EVIDENCED.value,
-    WeaknessStatus.REVIEW_DUE.value,
-}
 
 
 def _passed(reassessment: dict) -> bool:
@@ -329,4 +328,4 @@ def snapshot_rows(student_id: str, result: dict) -> list[dict]:
 
 
 def actionable_weaknesses(result: dict) -> list[dict]:
-    return [w for w in result["weaknesses"] if w["status"] in _ACTIONABLE]
+    return [w for w in result["weaknesses"] if w["status"] in ACTIONABLE_WEAKNESS_STATUSES]

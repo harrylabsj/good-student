@@ -94,3 +94,23 @@ def test_self_reported_confidence_type_checked(service):
     )
     assert resp["ok"] is False
     assert resp["error"]["code"] == "invalid_argument"
+
+
+def test_idempotency_records_pruned_after_ttl(service):
+    """幂等表按 TTL 清理：过期键不再占库，新键写入不受影响。"""
+    from good_student import clock
+    from good_student.models import IDEMPOTENCY_TTL_DAYS
+
+    student = make_student(service)
+    service.ingest_candidates(student, make_batch([make_question()]), idempotency_key="old-key")
+    with service.store.tx():
+        service.store._conn.execute(
+            "UPDATE idempotency SET created_at = ? WHERE key = 'old-key'",
+            (clock.add_days(clock.iso(), -(IDEMPOTENCY_TTL_DAYS + 1)),),
+        )
+    service.ingest_candidates(
+        student, make_batch([make_question(locator="p1-q2")]), idempotency_key="new-key"
+    )
+    keys = {r["key"] for r in service.store._conn.execute("SELECT key FROM idempotency").fetchall()}
+    assert "old-key" not in keys
+    assert "new-key" in keys

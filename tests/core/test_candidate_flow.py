@@ -210,6 +210,22 @@ def test_confirm_edits_attempted_at_weird_type_fails_cleanly(service):
     assert resp["data"]["failed"][0]["code"] == "invalid_argument"
 
 
+def test_confirm_edits_non_object_returns_invalid_argument(service):
+    """edits 传 list（含 dict 元素）等非对象类型时给 invalid_argument，而非 internal_error。"""
+    student = make_student(service)
+    service.ingest_candidates(student, make_batch([make_question()]))
+    cid = service.list_pending(student)["data"]["pending"][0]["candidate_id"]
+    resp = service.confirm_questions(
+        student,
+        [{"candidate_id": cid, "action": "confirm", "edits": [{"subject": "数学"}]}],
+    )
+    assert resp["ok"] is True
+    assert resp["data"]["applied"] == []
+    assert len(resp["data"]["failed"]) == 1
+    assert resp["data"]["failed"][0]["code"] == "invalid_argument"
+    assert service.store.attempts_for_student(student) == []
+
+
 def test_ingest_ttl_hours_out_of_range_rejected(service):
     """L7：ttl_hours 越界（0 / 超长）应给 invalid_argument，而不是预过期/永不过期。"""
     student = make_student(service)

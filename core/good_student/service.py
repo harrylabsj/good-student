@@ -103,6 +103,16 @@ def _require_student(store: Store, student_id: str) -> dict:
     return student
 
 
+def _normalized_now(now: str | None) -> str:
+    """归一化调用方传入的 now（仅测试与工具注入使用）；统一 UTC，保证字典序即时间序。"""
+    if now is None:
+        return clock.iso()
+    try:
+        return clock.to_utc_iso(now)
+    except (TypeError, ValueError) as exc:
+        raise GoodStudentError("invalid_argument", f"now 不是合法时间：{exc}") from exc
+
+
 class Service:
     DATA_DIR_ENV = "GOOD_STUDENT_DATA"
 
@@ -123,16 +133,14 @@ class Service:
         return expired
 
     def _idempotent_call(self, key: str | None, run) -> dict:
+        """同键重放返回首次结果；成功响应的落库由 run() 的实现放在其写事务内（崩溃一致）。"""
         if key:
             cached = self.store.idempotency_get(key)
             if cached is not None:
                 replayed = json.loads(json.dumps(cached))
                 replayed.setdefault("warnings", []).append("idempotent_replay")
                 return replayed
-        result = run()
-        if key and result.get("ok"):
-            self.store.idempotency_put(key, result)
-        return result
+        return run()
 
     # ---- 工具实现（§16）----
 
@@ -419,70 +427,84 @@ class Service:
         def _do() -> dict:
             existing = self.store.find_source_by_hash(student_id, content_hash)
             if existing:
-                candidates = self.store.candidates_for_source(existing["id"])
-                confirmed_statuses = (CandidateStatus.CONFIRMED.value, CandidateStatus.ANALYZED.value)
-                pending = [c for c in candidates if c["status"] == CandidateStatus.NEEDS_CONFIRMATION.value]
-                confirmed = [c for c in candidates if c["status"] in confirmed_statuses]
-                existing_texts = {c["payload"].get("question_text", "") for c in candidates}
-                new_texts = [q.get("question_text", "") for q in batch["questions"]]
-                resp = _ok(
-                    {
-                        "duplicate": True,
-                        "existing": {
-                            "batch_id": candidates[0]["batch_id"] if candidates else None,
-                            "source_id": existing["id"],
-                            "pending_count": len(pending),
-                            "confirmed_count": len(confirmed),
+                return self._duplicate_response(student_id, batch, content_hash, idempotency_key)
+            try:
+                with self.store.tx():
+                    source = self.store.insert_source(
+                        student_id,
+                        batch["source"]["source_type"],
+                        host,
+                        batch["source"]["source_ref"],
+                        content_hash,
+                        batch["source"].get("page_count"),
+                        captured_at,
+                        now,
+                    )
+                    batch_id = str(uuid.uuid4())
+                    expires_at = clock.iso(clock.utcnow() + timedelta(hours=ttl_hours))
+                    inserted = [
+                        self.store.insert_candidate(batch_id, student_id, source["id"], q, expires_at)
+                        for q in batch["questions"]
+                    ]
+                    self.store.log_event(
+                        "candidates_ingested",
+                        {"student_id": student_id, "batch_id": batch_id, "count": len(inserted)},
+                    )
+                    resp = _ok(
+                        {
+                            "duplicate": False,
+                            "batch_id": batch_id,
+                            "source_id": source["id"],
+                            "candidate_count": len(inserted),
+                            "expires_at": expires_at,
+                            "pending": [self._pending_view(c) for c in inserted],
                         },
-                        "diff": {
-                            "new_questions": [t for t in new_texts if t not in existing_texts],
-                            "missing_questions": [t for t in existing_texts if t not in new_texts],
-                        },
-                    },
-                    warnings=["duplicate_material: 该材料已导入过，可直接继续确认，未重复写入"],
-                )
-                if idempotency_key:
-                    with self.store.tx():
+                        warnings=warnings or None,
+                    )
+                    if idempotency_key:
                         self.store.idempotency_put(idempotency_key, resp)
-                return resp
-
-            with self.store.tx():
-                source = self.store.insert_source(
-                    student_id,
-                    batch["source"]["source_type"],
-                    host,
-                    batch["source"]["source_ref"],
-                    content_hash,
-                    batch["source"].get("page_count"),
-                    captured_at,
-                    now,
-                )
-                batch_id = str(uuid.uuid4())
-                expires_at = clock.iso(clock.utcnow() + timedelta(hours=ttl_hours))
-                inserted = [
-                    self.store.insert_candidate(batch_id, student_id, source["id"], q, expires_at)
-                    for q in batch["questions"]
-                ]
-                self.store.log_event(
-                    "candidates_ingested",
-                    {"student_id": student_id, "batch_id": batch_id, "count": len(inserted)},
-                )
-                resp = _ok(
-                    {
-                        "duplicate": False,
-                        "batch_id": batch_id,
-                        "source_id": source["id"],
-                        "candidate_count": len(inserted),
-                        "expires_at": expires_at,
-                        "pending": [self._pending_view(c) for c in inserted],
-                    },
-                    warnings=warnings or None,
-                )
-                if idempotency_key:
-                    self.store.idempotency_put(idempotency_key, resp)
-                return resp
+                    return resp
+            except sqlite3.IntegrityError:
+                # 并发导入同一材料撞 (student_id, content_hash) 唯一索引：
+                # 胜者事务已提交，本事务已回滚，转入重复分支返回既有批次视图。
+                return self._duplicate_response(student_id, batch, content_hash, idempotency_key)
 
         return self._idempotent_call(idempotency_key, _do)
+
+    def _duplicate_response(
+        self, student_id: str, batch: dict, content_hash: str, idempotency_key: str | None
+    ) -> dict:
+        existing = self.store.find_source_by_hash(student_id, content_hash)
+        if not existing:
+            raise GoodStudentError(
+                "persistence_error", "重复材料检查失败：唯一索引冲突但未找到既有来源"
+            )
+        candidates = self.store.candidates_for_source(existing["id"])
+        confirmed_statuses = (CandidateStatus.CONFIRMED.value, CandidateStatus.ANALYZED.value)
+        pending = [c for c in candidates if c["status"] == CandidateStatus.NEEDS_CONFIRMATION.value]
+        confirmed = [c for c in candidates if c["status"] in confirmed_statuses]
+        existing_texts = {c["payload"].get("question_text", "") for c in candidates}
+        new_texts = [q.get("question_text", "") for q in batch["questions"]]
+        resp = _ok(
+            {
+                "duplicate": True,
+                "existing": {
+                    "batch_id": candidates[0]["batch_id"] if candidates else None,
+                    "source_id": existing["id"],
+                    "pending_count": len(pending),
+                    "confirmed_count": len(confirmed),
+                },
+                "diff": {
+                    "new_questions": [t for t in new_texts if t not in existing_texts],
+                    "missing_questions": [t for t in existing_texts if t not in new_texts],
+                },
+            },
+            warnings=["duplicate_material: 该材料已导入过，可直接继续确认，未重复写入"],
+        )
+        if idempotency_key:
+            with self.store.tx():
+                self.store.idempotency_put(idempotency_key, resp)
+        return resp
 
     def _pending_view(self, candidate: dict) -> dict:
         payload = candidate["payload"]
@@ -563,10 +585,14 @@ class Service:
                 fail(index, "invalid_state", f"候选当前状态为 {candidate['status']}，不能确认")
                 continue
 
-            edits = item.get("edits") or {}
-            if not isinstance(edits, dict) or set(edits) - CONFIRM_EDIT_FIELDS:
-                unknown = sorted(set(edits) - CONFIRM_EDIT_FIELDS) if isinstance(edits, dict) else []
-                fail(index, "invalid_argument", f"不允许的编辑字段：{unknown or 'edits'}")
+            raw_edits = item.get("edits")
+            if raw_edits is not None and not isinstance(raw_edits, dict):
+                fail(index, "invalid_argument", f"items[{index}].edits 必须为对象")
+                continue
+            edits = raw_edits or {}
+            unknown = sorted(set(edits) - CONFIRM_EDIT_FIELDS)
+            if unknown:
+                fail(index, "invalid_argument", f"不允许的编辑字段：{unknown}")
                 continue
 
             # 编辑字段类型校验（M3）：宿主模型可能按候选 payload 的 {value,confidence} 结构
@@ -581,7 +607,7 @@ class Service:
                 continue
 
             if action == "reject":
-                plan.append({"kind": "reject", "candidate": candidate})
+                plan.append({"kind": "reject", "index": index, "candidate": candidate})
                 continue
 
             payload = candidate["payload"]
@@ -624,6 +650,7 @@ class Service:
             plan.append(
                 {
                     "kind": "confirm",
+                    "index": index,
                     "candidate": candidate,
                     "attempt": {
                         "student_id": student_id,
@@ -648,19 +675,28 @@ class Service:
 
         def _do() -> dict:
             with self.store.tx():
+                now = clock.iso()
                 for step in plan:
-                    candidate = step["candidate"]
+                    candidate_id = step["candidate"]["id"]
+                    index = step["index"]
+                    # 计划构建与事务应用之间存在并发窗口（WAL 下快照读可能过期），
+                    # 状态推进必须用条件 UPDATE 兜底：只有一个事务能赢得确认/拒绝。
                     if step["kind"] == "reject":
-                        self.store.update_candidate_status(candidate["id"], CandidateStatus.REJECTED)
-                        applied.append({"candidate_id": candidate["id"], "action": "rejected"})
+                        won = self.store.transition_candidate(candidate_id, CandidateStatus.REJECTED, now)
+                    else:
+                        won = self.store.transition_candidate(candidate_id, CandidateStatus.CONFIRMED, now)
+                    if not won:
+                        failed.append(self._classify_transition_failure(candidate_id, index, now))
+                        continue
+                    if step["kind"] == "reject":
+                        applied.append({"candidate_id": candidate_id, "action": "rejected"})
                         continue
                     attempt = self.store.insert_attempt(step["attempt"])
                     for label in step["labels"]:
                         kc, _created = self.store.resolve_kc(attempt["subject_id"], label)
                         self.store.insert_attempt_kc(attempt["id"], kc["id"], step["kc_source"])
-                    self.store.update_candidate_status(candidate["id"], CandidateStatus.CONFIRMED)
                     entry = {
-                        "candidate_id": candidate["id"],
+                        "candidate_id": candidate_id,
                         "action": "confirmed",
                         "attempt_id": attempt["id"],
                     }
@@ -678,11 +714,28 @@ class Service:
 
         return self._idempotent_call(idempotency_key, _do)
 
+    def _classify_transition_failure(self, candidate_id: str, index: int, now: str) -> dict:
+        """条件状态推进失败后重读现状，给出可操作的失败原因。"""
+        fresh = self.store.get_candidate(candidate_id)
+        if fresh is None:
+            return {"index": index, "code": "not_found", "message": f"候选不存在：{candidate_id}"}
+        if fresh["status"] == CandidateStatus.EXPIRED.value or fresh["expires_at"] <= now:
+            return {
+                "index": index,
+                "code": "candidate_expired",
+                "message": f"候选已过期（未在有效期内确认）：{candidate_id}",
+            }
+        return {
+            "index": index,
+            "code": "invalid_state",
+            "message": f"候选当前状态为 {fresh['status']}，不能确认",
+        }
+
     @_envelope
     def analyze(self, student_id: str, persist_snapshot: bool = True, now: str | None = None) -> dict:
         _require_student(self.store, student_id)
         self._expire_now()
-        result, warnings = analysis.analyze_student(self.store, student_id, now)
+        result, warnings = analysis.analyze_student(self.store, student_id, _normalized_now(now))
         with self.store.tx():
             self.store.mark_candidates_analyzed(student_id)
             if persist_snapshot:
@@ -696,7 +749,7 @@ class Service:
     @_envelope
     def create_plan(self, student_id: str, idempotency_key: str | None = None, now: str | None = None) -> dict:
         _require_student(self.store, student_id)
-        result, _ = analysis.analyze_student(self.store, student_id, now)
+        result, _ = analysis.analyze_student(self.store, student_id, _normalized_now(now))
         reason_by_kc = self._dominant_reasons(student_id)
 
         def _do() -> dict:
@@ -782,9 +835,17 @@ class Service:
             raise GoodStudentError("invalid_argument", "self_reported_confidence 必须为 0-1 之间的数字")
         if not any(link["kc_id"] == kc_id for link in self.store.attempt_kc_rows(student_id)):
             raise GoodStudentError("not_found", f"知识点 {kc_id} 未出现在该学生的已确认作答中")
+        if time_seconds is not None and (
+            not isinstance(time_seconds, int) or isinstance(time_seconds, bool) or time_seconds < 0
+        ):
+            raise GoodStudentError("invalid_argument", "time_seconds 必须为非负整数")
+        if action_id is not None:
+            action = self.store.get_action(action_id)
+            if not action or action["student_id"] != student_id:
+                raise GoodStudentError("not_found", f"学习动作不存在：{action_id}")
         try:
-            completed = clock.to_utc_iso(completed_at) if completed_at else (now or clock.iso())
-        except ValueError as exc:
+            completed = clock.to_utc_iso(completed_at) if completed_at else _normalized_now(now)
+        except (TypeError, ValueError) as exc:
             raise GoodStudentError("invalid_argument", f"completed_at 不是合法时间：{exc}") from exc
 
         def _do() -> dict:
@@ -823,6 +884,7 @@ class Service:
                     "reassessment": {
                         "id": reassessment["id"],
                         "kc_id": kc_id,
+                        "action_id": action_id,
                         "correct_count": correct_count,
                         "total_count": total_count,
                         "accuracy": reassessment["accuracy"],
@@ -846,7 +908,7 @@ class Service:
         """每周家长简报（只读）：本周新增错题、薄弱点状态、待办动作、到期复习与复测完成情况。"""
         student = _require_student(self.store, student_id)
         self._expire_now()
-        now = now or clock.iso()
+        now = _normalized_now(now)
         week_ago = clock.add_days(now, -7)
         next_week = clock.add_days(now, 7)
 
@@ -879,6 +941,7 @@ class Service:
             for w in result["weaknesses"]
         ]
 
+        all_actions = self.store.actions_for_student(student_id)
         active_actions = [
             {
                 "id": a["id"],
@@ -887,7 +950,7 @@ class Service:
                 "due_date": a["due_date"],
                 "overdue": bool(a["due_date"] and a["due_date"] < now),
             }
-            for a in self.store.actions_for_student(student_id)
+            for a in all_actions
             if a["status"] == "active"
         ]
 
@@ -900,7 +963,7 @@ class Service:
             for s in self.store.current_snapshots(student_id)
             if s["next_review_at"] and s["next_review_at"] <= next_week
         ]
-        for action in self.store.actions_for_student(student_id):
+        for action in all_actions:
             if action["status"] != "active":
                 continue
             for scheduled_at in action["review_schedule"]:

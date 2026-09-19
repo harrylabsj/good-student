@@ -5,6 +5,8 @@ from enum import Enum
 
 class CandidateStatus(str, Enum):
     RECEIVED = "received"
+    # 协议预留状态：模式 B（Skill 驱动的分步提取）与未来宿主使用，
+    # 当前模式 A 流程从 needs_confirmation 直接开始，不经由这些状态。
     EXTRACTING = "extracting"
     EXTRACTION_FAILED = "extraction_failed"
     RETRYING = "retrying"
@@ -23,6 +25,14 @@ class WeaknessStatus(str, Enum):
     IMPROVING = "improving"
     MASTERED = "mastered"
     REVIEW_DUE = "review_due"
+
+
+# 可直接生成学习动作的薄弱状态（分析层与建议层共用单一源）
+ACTIONABLE_WEAKNESS_STATUSES = {
+    WeaknessStatus.SUSPECTED.value,
+    WeaknessStatus.EVIDENCED.value,
+    WeaknessStatus.REVIEW_DUE.value,
+}
 
 
 # 错因代码 -> 中文标签（设计 §15）
@@ -62,3 +72,6 @@ PASS_ACCURACY_THRESHOLD = 0.8
 REVIEW_INTERVAL_DAYS = 14
 
 DEFAULT_CANDIDATE_TTL_HOURS = 24
+
+# 幂等记录保留天数：超过后下次写入时清理，同键重放将重新执行
+IDEMPOTENCY_TTL_DAYS = 7

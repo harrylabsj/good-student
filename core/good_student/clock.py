@@ -12,6 +12,9 @@ def iso(dt: datetime | None = None) -> str:
 
 
 def parse_iso(value: str) -> datetime:
+    # 'Z' 后缀在 Python 3.11 才被 fromisoformat 接受；requires-python 声明 3.10 起
+    if isinstance(value, str) and value.endswith(("Z", "z")):
+        value = value[:-1] + "+00:00"
     dt = datetime.fromisoformat(value)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)

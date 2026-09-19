@@ -239,9 +239,37 @@ def _v5(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE learning_actions ADD COLUMN review_schedule TEXT NOT NULL DEFAULT '[]'")
 
 
-MIGRATIONS: list[tuple[int, Migrator]] = [(1, _v1), (2, _v2), (3, _v3), (4, _v4), (5, _v5)]
+def _v6(conn: sqlite3.Connection) -> None:
+    """sources(student_id, content_hash) 唯一化：并发导入同一材料时由数据库约束兜底去重。
 
-SCHEMA_VERSION_LATEST = 5
+    旧库可能已存在并发窗口产生的重复来源；先合并到最早一条（候选与作答改挂到保留行）
+    再重建唯一索引，否则建索引会失败。
+    """
+    conn.execute("DROP INDEX IF EXISTS idx_sources_hash")
+    conn.execute(
+        "CREATE TEMP TABLE dup_sources AS"
+        " SELECT s.id AS dup_id,"
+        " (SELECT k.id FROM sources k WHERE k.student_id = s.student_id"
+        "  AND k.content_hash = s.content_hash ORDER BY k.created_at, k.rowid LIMIT 1) AS keep_id"
+        " FROM sources s"
+    )
+    conn.execute("DELETE FROM dup_sources WHERE dup_id = keep_id")
+    conn.execute(
+        "UPDATE candidates SET source_id = (SELECT keep_id FROM dup_sources WHERE dup_id = candidates.source_id)"
+        " WHERE source_id IN (SELECT dup_id FROM dup_sources)"
+    )
+    conn.execute(
+        "UPDATE attempts SET source_id = (SELECT keep_id FROM dup_sources WHERE dup_id = attempts.source_id)"
+        " WHERE source_id IN (SELECT dup_id FROM dup_sources)"
+    )
+    conn.execute("DELETE FROM sources WHERE id IN (SELECT dup_id FROM dup_sources)")
+    conn.execute("DROP TABLE dup_sources")
+    conn.execute("CREATE UNIQUE INDEX idx_sources_hash ON sources(student_id, content_hash)")
+
+
+MIGRATIONS: list[tuple[int, Migrator]] = [(1, _v1), (2, _v2), (3, _v3), (4, _v4), (5, _v5), (6, _v6)]
+
+SCHEMA_VERSION_LATEST = 6
 
 
 def current_version(conn: sqlite3.Connection) -> int:

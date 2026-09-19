@@ -8,6 +8,7 @@ server so existing source-tree workflows keep working.
 from __future__ import annotations
 
 import sys
+import threading
 
 try:
     from mcp.server.mcpserver import MCPServer
@@ -22,6 +23,7 @@ from good_student.service import Service
 
 mcp = MCPServer("good-student")
 _service: Service | None = None
+_service_lock = threading.Lock()
 
 __all__ = [
     "mcp",
@@ -44,9 +46,12 @@ __all__ = [
 
 
 def _svc() -> Service:
+    """进程级单例；MCP SDK 在 worker 线程池并发执行同步工具，初始化必须加锁。"""
     global _service
     if _service is None:
-        _service = Service()
+        with _service_lock:
+            if _service is None:
+                _service = Service()
     return _service
 
 
