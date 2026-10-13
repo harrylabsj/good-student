@@ -7,19 +7,15 @@ date: 2026-09-14
 
 # 结论
 
-## 2026-09-14 独立专家包（v3.0）
+## 2026-10-10 独立专家包 v1.1.2
 
-首发采用 **专家内嵌 MCP** 结构：
+专家通过 `dependencies.mcpServers` 加载包内 `.mcp.json`，由包内启动脚本创建隔离环境、
+安装内置 wheel 和固定版本 MCP 依赖，再启动 stdio MCP。移除专家中的 `preAuth` 与 `cli.json`：
+连接器的安装流程不能作为专家冷启动保证。用户本机需 Python 3.10+，首次连接需联网；
+缓存重连不重复安装。核心 wheel 不发布 PyPI，不依赖市场连接器，学生数据保存在本机。
 
-1. `plugin.json` 用 `dependencies.mcpServers: "./.mcp.json"` 声明内嵌 MCP，并预加载
-   `skills/good-student`。
-2. `.mcp.json` 用 `preAuth: "cli"` 触发同目录 `cli.json`；后者声明 WorkBuddy 托管 Python
-   3.11，并从专家包 `pkg/` 安装 `good_student-*.whl[mcp]`。
-3. 安装后通过 `good-student-mcp` 启动本地 stdio MCP。学生数据仍保存在本机。
-4. `connector/` 保留为兼容方案，但专家不依赖市场连接器；已提交的连接器申请应撤回。
-
-本方案不申请 OAuth、不写死 Token、不上传原始附件；学生数据保存在用户本机
-`~/.good-student/` SQLite。原 D5 机械门禁已移除（识别质量参考线见 `evals/README.md`）。
+发布测试直接启动构建后的 `.mcp.json`，覆盖新缓存握手、15 工具、自检、数据持久化和离线缓存重连。
+真实 WorkBuddy 客户端与平台机审仍需验证；以下旧版本条目为历史记录。
 
 ## 已完成的仓库改造
 

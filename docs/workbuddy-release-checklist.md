@@ -29,18 +29,11 @@
 
 ## 第 2 步：专家内嵌 MCP 安装验证（关键风险点）
 
-- [ ] 上传专家 ZIP，观察是否解析失败（失败则按 `.mcp.json` / `cli.json` 排错，或邮件
-      openworkbuddy@tencent.com）
-- [ ] **在真实 WorkBuddy 客户端召唤专家并连接内嵌 MCP**，重点验证：`preAuth: "cli"`
-      能执行 `python -m pip install --upgrade './pkg/good_student-0.1.1-py3-none-any.whl[mcp]'`
-      是否以专家包解压目录为工作目录执行
-  - ✅ 成功 → 继续
-  - ❌ 失败（找不到 ./pkg 路径）→ 启用备选：把 wheel 发到包源，init 改为
-    `python -m pip install --upgrade good-student==0.1.0`，重打包重提交
-- [ ] 安装完成后在对话里让 AI 调用 `good-student capabilities`：返回 15 个工具、
-      envelope 完整
-- [ ] 低版本客户端（<5.0.0）表现符合预期：未启用过的不展示，已启用的置灰提示升级
-- [ ] 跑一遍 `good-student doctor`：全绿（含 knowledge_packs: 3 packs loaded）
+- [ ] 上传 v1.1.2 专家 ZIP，确认解析与机审结果。
+- [ ] 在真实客户端确认 `python3` 为 Python 3.10+，首次连接能够联网安装第三方依赖。
+- [ ] 验证包内启动脚本完成 MCP 握手，返回 15 个工具，`good_student_doctor` 全绿。
+- [ ] 创建学生并重连，确认数据保留且缓存环境未重复安装。
+- [ ] 安装或启动失败时读取 stderr 诊断，不改为发布核心包到 PyPI。
 
 ## 第 3 步：连接器端到端场景（真实客户端）
 

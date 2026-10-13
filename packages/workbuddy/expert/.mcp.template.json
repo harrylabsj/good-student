@@ -1,11 +1,12 @@
 {
-  "preAuth": "cli",
   "mcpServers": {
     "good-student": {
       "type": "stdio",
-      "command": "good-student-mcp",
-      "args": [],
-      "timeout": 30000,
+      "command": "python3",
+      "args": ["${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
+      "cwd": "${CODEBUDDY_PLUGIN_ROOT}",
+      "env": {"GOOD_STUDENT_RUNTIME": "${CODEBUDDY_PLUGIN_DATA}/runtime"},
+      "timeout": 180000,
       "x-workbuddy": {
         "displayName": {
           "zh": "学生错题本本地工具",

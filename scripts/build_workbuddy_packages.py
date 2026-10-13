@@ -9,7 +9,7 @@ Archives:
   installation runs ``python -m pip install ./pkg/<wheel>`` — no PyPI
   publishing and no uvx required. (jsonschema 等运行依赖由平台托管 pip 解析。)
 - Expert archive: independently runnable WorkBuddy expert with an embedded
-  Skill, stdio MCP declaration, managed-Python installer, and bundled wheel.
+  Skill, stdio MCP declaration, isolated Python bootstrap, and bundled wheel.
 
 The script validates the expert package against WorkBuddy platform constraints
 (display description length, tag/quick prompt counts, avatar size, dependency
@@ -115,14 +115,15 @@ def stage_expert(work_dir: Path) -> Path:
     pkg.mkdir(exist_ok=True)
     shutil.copy2(wheel, pkg / wheel.name)
 
-    skill_source = WORKBUDDY / "connector" / "skills" / "good-student"
-    shutil.copytree(skill_source, staged / "skills" / "good-student")
+    # The expert has an MCP-specific Skill. Reuse only the shared state/error
+    # references so CLI instructions from the standalone connector cannot
+    # contradict the expert's MCP workflow.
+    shared_refs = ROOT / "skills" / "good-student" / "references"
+    expert_refs = staged / "skills" / "good-student" / "references"
+    expert_refs.mkdir(parents=True, exist_ok=True)
+    for reference in ("error-registry.md", "state-machines.md"):
+        shutil.copy2(shared_refs / reference, expert_refs / reference)
 
-    cli_template = (staged / "cli.template.json").read_text(encoding="utf-8")
-    (staged / "cli.json").write_text(
-        cli_template.replace("${WHEEL_FILENAME}", wheel.name), encoding="utf-8"
-    )
-    (staged / "cli.template.json").unlink()
     (staged / ".mcp.json").write_text(
         (staged / ".mcp.template.json").read_text(encoding="utf-8"), encoding="utf-8"
     )
@@ -170,27 +171,31 @@ def validate_expert(source: Path) -> None:
            "专家必须预加载内嵌 good-student Skill")
 
     mcp = json.loads((source / ".mcp.json").read_text(encoding="utf-8"))
-    _check(mcp.get("preAuth") == "cli", ".mcp.json 必须通过 preAuth=cli 安装内嵌 wheel")
+    _check("preAuth" not in mcp, "专家启动不得依赖连接器 preAuth 安装流程")
     servers = mcp.get("mcpServers", {})
     _check(set(servers) == {"good-student"}, ".mcp.json 必须仅声明 good-student Server")
     server = servers["good-student"]
     _check(server.get("type") == "stdio", "内嵌 MCP 必须使用 stdio")
-    _check(server.get("command") == "good-student-mcp", "MCP 启动命令必须为 good-student-mcp")
+    _check(server.get("command") == "python3", "MCP 必须从 Python 启动包内引导脚本")
+    _check(server.get("args") == ["${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
+           "MCP 引导脚本必须使用专家根目录变量定位")
+    _check((source / "bin/start_mcp.py").is_file(), "专家包缺少 MCP 冷启动引导脚本")
+    _check((source / "runtime-constraints.txt").is_file(), "专家包缺少经验证的依赖版本约束")
     _check(server.get("x-workbuddy", {}).get("auth", {}).get("type") == "none",
            "本地 MCP 必须声明无需认证")
 
-    cli = json.loads((source / "cli.json").read_text(encoding="utf-8"))
-    _check(cli.get("runtime", {}).get("type") == "python", "专家 cli.json 必须声明 Python 运行时")
     wheels = list((source / "pkg").glob("*.whl"))
     _check(len(wheels) == 1, "专家 pkg/ 必须有且仅有一个内置 wheel")
-    for platform, command in cli.get("init", {}).items():
-        _check(platform in {"darwin", "linux", "win32"}, f"未知平台：{platform}")
-        _check(f"./pkg/{wheels[0].name}[mcp]" in command,
-               f"init.{platform} 必须安装内置 wheel 的 mcp extra")
-    _check(set(cli.get("init", {})) == {"darwin", "linux", "win32"},
-           "专家 cli.json init 必须覆盖 darwin/linux/win32")
+    _check(not (source / "cli.json").exists(), "专家包不应携带无效的 CLI 预安装配置")
     _check((source / "skills" / "good-student" / "SKILL.md").is_file(),
            "专家包缺少内嵌 good-student Skill")
+    skill_text = (source / "skills" / "good-student" / "SKILL.md").read_text(encoding="utf-8")
+    _check("good_student_ingest_candidates" in skill_text,
+           "专家 Skill 必须指导调用 MCP 候选录入工具")
+    _check("good-student` CLI" in skill_text,
+           "专家 Skill 必须明确排除 CLI，避免 MCP/CLI 调用方式冲突")
+    _check("good-student capabilities" not in skill_text,
+           "专家 MCP Skill 不得把 CLI 命令当作工具调用")
 
     avatar = source / plugin.get("avatar", "")
     _check(avatar.is_file(), f"缺少头像 {plugin.get('avatar')}")
@@ -247,6 +252,16 @@ def build(output_dir: Path) -> list[Path]:
         validate_skill(WORKBUDDY / "skill")
         validate_connector(staged_connector)
         validate_expert(staged_expert)
+        _check(
+            (staged_expert / "skills/good-student/references/error-registry.md").read_bytes()
+            == (ROOT / "skills/good-student/references/error-registry.md").read_bytes(),
+            "专家 Skill 的 error-registry.md 与共享源不一致",
+        )
+        _check(
+            (staged_expert / "skills/good-student/references/state-machines.md").read_bytes()
+            == (ROOT / "skills/good-student/references/state-machines.md").read_bytes(),
+            "专家 Skill 的 state-machines.md 与共享源不一致",
+        )
         archives = [
             (WORKBUDDY / "skill", output_dir / "good-student-workbuddy-skill.zip"),
             (staged_connector, output_dir / "good-student-workbuddy-connector.zip"),
