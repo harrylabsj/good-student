@@ -199,10 +199,8 @@ def validate_expert(source: Path) -> None:
            "defaultInitPrompt 必须与第一条 quickPrompt 一致")
 
     _check(plugin.get("categoryId", "").startswith("15-"), "categoryId 应为 15-Education")
-    dependencies = plugin.get("dependencies", {})
-    _check(dependencies.get("mcpServers") == "./.mcp.json",
-           "dependencies.mcpServers 必须指向内嵌 .mcp.json")
-    _check(not dependencies.get("connectors"), "独立专家包不得依赖市场连接器")
+    _check("dependencies" not in plugin,
+           "专家通过根目录 .mcp.json 声明 MCP；兼容 WorkBuddy 本地清单校验")
     _check(plugin.get("skills") == ["./skills/good-student"],
            "专家必须预加载内嵌 good-student Skill")
 
@@ -213,8 +211,10 @@ def validate_expert(source: Path) -> None:
     server = servers["good-student"]
     _check(server.get("type") == "stdio", "内嵌 MCP 必须使用 stdio")
     _check(server.get("command") == "python3", "MCP 必须从 Python 启动包内引导脚本")
-    _check(server.get("args") == ["-I", "${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
-           "MCP 引导脚本必须使用专家根目录变量定位")
+    _check(server.get("args") == ["./bin/start_mcp.py"],
+           "MCP 引导脚本必须使用 WorkBuddy 可解析的包内相对路径")
+    _check("cwd" not in server and "${CODEBUDDY_PLUGIN_" not in json.dumps(server),
+           "MCP 配置不得依赖仅在 CodeBuddy 插件环境中验证的占位符")
     _check((source / "bin/start_mcp.py").is_file(), "专家包缺少 MCP 冷启动引导脚本")
     _check((source / "runtime-constraints.txt").is_file(), "专家包缺少经验证的依赖版本约束")
     _check(server.get("x-workbuddy", {}).get("auth", {}).get("type") == "none",

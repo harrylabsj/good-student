@@ -1,6 +1,6 @@
 {
   "name": "good-student",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Wrong-book coach for parents and students: extract, confirm, analyze, plan, and reassess from wrong-question materials.",
   "author": {
     "name": "海纳",
@@ -49,8 +49,5 @@
       "zh": "根据已确认错题生成本周查缺补漏计划",
       "en": "Create this week's gap-filling plan from confirmed wrong questions"
     }
-  ],
-  "dependencies": {
-    "mcpServers": "./.mcp.json"
-  }
+  ]
 }

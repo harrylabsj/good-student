@@ -67,6 +67,47 @@ def runtime_environment():
     return env
 
 
+def runtime_target():
+    return [platform.system(), platform.machine(), f"{sys.version_info.major}.{sys.version_info.minor}"]
+
+
+def prefer_bundled_interpreter(targets: list[dict]) -> None:
+    """Find an installed Python matching the bundled wheels, including from a GUI PATH."""
+    current = runtime_target()
+    supported = [entry["target"] for entry in targets]
+    if current in supported:
+        return
+
+    names = [f"python{target[2]}" for target in supported if target[:2] == current[:2]]
+    if os.name == "nt":
+        return
+    search_path = os.pathsep.join(filter(None, [os.environ.get("PATH"), "/opt/homebrew/bin", "/usr/local/bin"]))
+    checked = {Path(sys.executable).resolve()}
+    for name in [*names, "python3"]:
+        for directory in search_path.split(os.pathsep):
+            if not Path(directory).is_absolute():
+                continue
+            located = shutil.which(name, path=directory)
+            if not located:
+                continue
+            candidate = Path(located).resolve()
+            if candidate in checked:
+                continue
+            checked.add(candidate)
+            try:
+                probe = subprocess.run(
+                    [str(candidate), "-I", "-c",
+                     "import json, platform, sys; print(json.dumps([platform.system(), platform.machine(), "
+                     "f'{sys.version_info.major}.{sys.version_info.minor}']))"],
+                    check=True, capture_output=True, text=True, env=runtime_environment(), timeout=3,
+                )
+                target = json.loads(probe.stdout)
+            except (OSError, ValueError, subprocess.SubprocessError):
+                continue
+            if target in supported:
+                os.execve(str(candidate), [str(candidate), "-I", str(Path(__file__).resolve())], runtime_environment())
+
+
 def unpack_offline_runtime(wheels: list[Path], destination: Path) -> None:
     # The build verifies that these wheels install entirely into site-packages.
     # Stage under the same parent so publishing the completed cache is atomic.
@@ -87,8 +128,6 @@ def unpack_offline_runtime(wheels: list[Path], destination: Path) -> None:
 
 
 def prepare_runtime(package_root: Path) -> tuple[Path, bool]:
-    if sys.version_info < (3, 10):  # noqa: UP036 - bootstrap also runs outside the project venv
-        raise RuntimeError("本地 MCP 需要 Python 3.10 或更新版本")
     wheels = list((package_root / "pkg").glob("good_student-*.whl"))
     if len(wheels) != 1:
         raise RuntimeError("专家包缺少唯一的核心 wheel，请重新安装专家包")
@@ -97,7 +136,10 @@ def prepare_runtime(package_root: Path) -> tuple[Path, bool]:
     wheelhouse = package_root / "wheelhouse"
     targets_path = package_root / "offline-targets.json"
     targets = json.loads(targets_path.read_text(encoding="utf-8"))
-    target_platform = [platform.system(), platform.machine(), f"{sys.version_info.major}.{sys.version_info.minor}"]
+    prefer_bundled_interpreter(targets)
+    if sys.version_info < (3, 10):  # noqa: UP036 - the first Python can be the macOS system Python 3.9
+        raise RuntimeError("未找到与包内依赖匹配的 Python；本地 MCP 需要 Python 3.10 或更新版本")
+    target_platform = runtime_target()
     offline_names = next((entry["wheels"] for entry in targets if entry["target"] == target_platform), None)
     offline_wheels = [wheel, *(wheelhouse / name for name in offline_names)] if offline_names is not None else None
 
@@ -140,6 +182,9 @@ def prepare_runtime(package_root: Path) -> tuple[Path, bool]:
 
 
 def main():
+    if not sys.flags.isolated:
+        executable = sys.executable
+        os.execve(executable, [executable, "-I", str(Path(__file__).resolve())], runtime_environment())
     package_root = Path(__file__).resolve().parents[1]
     try:
         runtime, offline = prepare_runtime(package_root)

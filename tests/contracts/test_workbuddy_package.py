@@ -102,8 +102,8 @@ def test_expert_manifest_matches_platform_constraints():
     assert len(plugin["quickPrompts"]) == 3
     assert plugin["defaultInitPrompt"] == plugin["quickPrompts"][0]
     assert plugin["categoryId"] == "15-Education"
-    assert plugin["version"] == "1.1.6"
-    assert plugin["dependencies"] == {"mcpServers": "./.mcp.json"}
+    assert plugin["version"] == "1.1.7"
+    assert "dependencies" not in plugin
     assert plugin["skills"] == ["./skills/good-student"]
     assert "token" not in json.dumps(plugin).lower()
     avatar = WORKBUDDY / "expert" / plugin["avatar"]
@@ -135,21 +135,25 @@ def test_embedded_expert_cold_and_warm_start_from_config(tmp_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     staged = module.stage_expert(tmp_path / "package with spaces")
-    config_text = (staged / ".mcp.json").read_text()
-    config_text = config_text.replace("${CODEBUDDY_PLUGIN_ROOT}", str(staged))
-    config_text = config_text.replace("${CODEBUDDY_PLUGIN_DATA}", str(tmp_path / "plugin data"))
-    config = json.loads(config_text)["mcpServers"]["good-student"]
+    config = json.loads((staged / ".mcp.json").read_text())["mcpServers"]["good-student"]
+    # WorkBuddy resolves ./ arguments to the mounted expert path on registration.
+    assert config["args"] == ["./bin/start_mcp.py"]
+    launcher = staged / config["args"][0]
     env = os.environ.copy()
     for key in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "GOOD_STUDENT_SCHEMA_DIR"):
         env.pop(key, None)
-    env.update(config["env"])
+    env["GOOD_STUDENT_RUNTIME"] = str(tmp_path / "plugin data" / "runtime")
     env["GOOD_STUDENT_DATA"] = str(tmp_path / "student-data")
     env["PIP_NO_INDEX"] = "1"
     env["PIP_NO_CACHE_DIR"] = "1"
-    # Remove the development venv from PATH: use the actual system python3.
-    env["PATH"] = os.pathsep.join(p for p in env["PATH"].split(os.pathsep) if ".venv" not in p)
+    # The GUI may run with only the system interpreter on PATH. On macOS,
+    # this also exercises re-exec from the system Python to the bundled target.
+    if sys.platform == "darwin" and Path("/opt/homebrew/bin/python3").exists():
+        env["PATH"] = "/usr/bin:/bin"
+    else:
+        env["PATH"] = os.pathsep.join(p for p in env["PATH"].split(os.pathsep) if ".venv" not in p)
     server = StdioServerParameters(
-        command=config["command"], args=config["args"], env=env, cwd=config["cwd"],
+        command=config["command"], args=[str(launcher)], env=env, cwd=str(tmp_path),
     )
 
     async def run_smoke(warm=False):

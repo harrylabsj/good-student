@@ -5,7 +5,7 @@ display_name_en: Student Wrong-book Notebook
 description: 通过本地 MCP 工具确认错题记录、分析知识点并安排有证据的复测。
 description_zh: 通过本地 MCP 工具确认错题记录、分析知识点并安排有证据的复测。
 description_en: Use local MCP tools to confirm wrong-question records, analyze knowledge points, and plan evidence-based reassessments.
-version: 1.1.6
+version: 1.1.7
 author: 海纳
 category: education
 ---

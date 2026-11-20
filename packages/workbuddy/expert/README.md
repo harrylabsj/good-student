@@ -3,6 +3,7 @@
 `good-student` 专家「学生错题本」，内嵌 Skill、本地 stdio MCP 和核心 wheel。
 本机需提供 Python 3.10+（`python3` 命令）。Linux x86_64（glibc 2.28+）的
 CPython 3.11/3.12 和打包机器对应的 Python 环境可离线完成首次连接。
+若系统首先找到的是其他 Python，启动脚本会优先选用与包内依赖匹配的已安装解释器。
 包内启动脚本直接加载随包提供的依赖，无需单独安装市场连接器，
 也无需发布 Good-student 到 PyPI。
 
@@ -27,9 +28,9 @@ expert/
 
 ## 要点
 
-- `plugin.json` 通过 `dependencies.mcpServers: "./.mcp.json"` 声明内嵌 MCP；不依赖市场连接器。
-- `.mcp.json` 通过 `${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py` 启动；安装日志仅写 stderr。
-  环境缓存在 `${CODEBUDDY_PLUGIN_DATA}/runtime`，安装失败允许重试，后续连接复用缓存。
+- 专家通过根目录的 `.mcp.json` 声明内嵌 MCP；不依赖市场连接器。
+- `.mcp.json` 通过 `./bin/start_mcp.py` 启动；安装日志仅写 stderr。
+  环境缓存在 `~/.cache/good-student-mcp`（可用 `GOOD_STUDENT_RUNTIME` 覆盖），安装失败允许重试，后续连接复用缓存。
 - 专家 Skill 使用 MCP 工具名，连接器 Skill 使用 CLI 命令；共享参考文档，避免两种调用约定混用。
 - 离线覆盖的环境直接解包加载依赖，无需 pip 或虚拟环境。其他环境首次连接仍需联网。
 - macOS 冷启动与缓存重连由发布测试覆盖；Windows 的 `python3` 命令和平台沙箱环境仍需实际验证。

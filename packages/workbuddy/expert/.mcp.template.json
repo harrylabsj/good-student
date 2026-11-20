@@ -3,9 +3,9 @@
     "good-student": {
       "type": "stdio",
       "command": "python3",
-      "args": ["-I", "${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
-      "cwd": "${CODEBUDDY_PLUGIN_ROOT}",
-      "env": {"GOOD_STUDENT_RUNTIME": "${CODEBUDDY_PLUGIN_DATA}/runtime"},
+      "args": [
+        "./bin/start_mcp.py"
+      ],
       "timeout": 180000,
       "x-workbuddy": {
         "displayName": {
