@@ -3,7 +3,7 @@
     "good-student": {
       "type": "stdio",
       "command": "python3",
-      "args": ["${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
+      "args": ["-I", "${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
       "cwd": "${CODEBUDDY_PLUGIN_ROOT}",
       "env": {"GOOD_STUDENT_RUNTIME": "${CODEBUDDY_PLUGIN_DATA}/runtime"},
       "timeout": 180000,

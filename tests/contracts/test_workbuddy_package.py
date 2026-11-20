@@ -102,7 +102,7 @@ def test_expert_manifest_matches_platform_constraints():
     assert len(plugin["quickPrompts"]) == 3
     assert plugin["defaultInitPrompt"] == plugin["quickPrompts"][0]
     assert plugin["categoryId"] == "15-Education"
-    assert plugin["version"] == "1.1.2"
+    assert plugin["version"] == "1.1.6"
     assert plugin["dependencies"] == {"mcpServers": "./.mcp.json"}
     assert plugin["skills"] == ["./skills/good-student"]
     assert "token" not in json.dumps(plugin).lower()
@@ -144,6 +144,8 @@ def test_embedded_expert_cold_and_warm_start_from_config(tmp_path):
         env.pop(key, None)
     env.update(config["env"])
     env["GOOD_STUDENT_DATA"] = str(tmp_path / "student-data")
+    env["PIP_NO_INDEX"] = "1"
+    env["PIP_NO_CACHE_DIR"] = "1"
     # Remove the development venv from PATH: use the actual system python3.
     env["PATH"] = os.pathsep.join(p for p in env["PATH"].split(os.pathsep) if ".venv" not in p)
     server = StdioServerParameters(
@@ -172,9 +174,10 @@ def test_embedded_expert_cold_and_warm_start_from_config(tmp_path):
 
     asyncio.run(run_smoke())
     marker = next(Path(env["GOOD_STUDENT_RUNTIME"]).glob("*/.ready"))
+    assert (marker.parent / "good_student" / "mcp_server.py").is_file()
+    assert not (marker.parent / "pyvenv.cfg").exists()
     installed_at = marker.stat().st_mtime_ns
-    # Cached restart must work even with an unreachable package index.
-    env["PIP_INDEX_URL"] = "http://127.0.0.1:9/unavailable"
+    # Reconnect offline without reinstalling or losing saved records.
     asyncio.run(run_smoke(warm=True))
     assert marker.stat().st_mtime_ns == installed_at
 

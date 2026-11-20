@@ -59,3 +59,23 @@ def test_analyze_rejects_invalid_now(service):
     resp = service.analyze(student, now="not-a-time")
     assert not resp["ok"]
     assert resp["error"]["code"] == "invalid_argument"
+
+
+def test_failed_reassessment_analysis_rolls_back_the_record(service, monkeypatch):
+    from good_student import analysis
+
+    student, kc_id = _setup_weakness(service)
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("analysis unavailable")
+
+    monkeypatch.setattr(analysis, "analyze_student", fail)
+    assert not service.record_reassessment(student, kc_id, 1, 1)["ok"]
+    assert service.store.reassessments_for_student(student) == []
+
+
+def test_reassessment_rejects_boolean_counts_and_string_flags(service):
+    student, kc_id = _setup_weakness(service)
+    assert service.record_reassessment(student, kc_id, True, 1)["error"]["code"] == "invalid_argument"
+    assert service.record_reassessment(student, kc_id, 1, 1, no_hints="false")["error"]["code"] == "invalid_argument"
+    assert service.store.reassessments_for_student(student) == []

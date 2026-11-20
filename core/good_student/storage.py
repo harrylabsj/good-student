@@ -85,15 +85,26 @@ class Store:
             conn.close()
 
     @contextmanager
-    def tx(self) -> Iterator[sqlite3.Connection]:
+    def tx(self, *, immediate: bool = False) -> Iterator[sqlite3.Connection]:
+        conn = self._conn
+        if conn.in_transaction:
+            conn.execute("SAVEPOINT service_write")
+            try:
+                yield conn
+            except BaseException:
+                conn.execute("ROLLBACK TO service_write")
+                raise
+            finally:
+                conn.execute("RELEASE service_write")
+            return
+        if immediate:
+            conn.execute("BEGIN IMMEDIATE")
         try:
-            yield self._conn
-            self._conn.commit()
+            yield conn
             self._restrict_data_files()
-        except Exception:
-            # 任意异常都回滚：避免残留未提交事务被下一次 commit() 意外提交（M2 兜底后，
-            # _envelope 会接住通用异常，必须保证此时事务已回滚）。
-            self._conn.rollback()
+            conn.commit()
+        except BaseException:
+            conn.rollback()
             raise
 
     # ---- 学生 ----
@@ -566,7 +577,8 @@ class Store:
 
     def idempotency_get(self, key: str) -> dict | None:
         row = self._conn.execute(
-            "SELECT response FROM idempotency WHERE key = ?", (key,)
+            "SELECT response FROM idempotency WHERE key = ? AND created_at >= ?",
+            (key, clock.add_days(clock.iso(), -IDEMPOTENCY_TTL_DAYS)),
         ).fetchone()
         return json.loads(row["response"]) if row else None
 
@@ -603,6 +615,20 @@ class Store:
         with_foreign_keys = self._conn.execute("PRAGMA foreign_keys").fetchone()[0]
         if not with_foreign_keys:  # pragma: no cover - 防御性兜底
             raise GoodStudentError("persistence_error", "外键约束未启用，拒绝删除")
+        # Older receipts used global keys, but their responses carry a student
+        # ID or the ID of a row about that student. Clear them before cascading.
+        owned_ids = ["SELECT id FROM students WHERE id = ?"]
+        for table in ("sources", "candidates", "attempts", "learning_actions", "reassessments", "score_records"):
+            owned_ids.append(f"SELECT id FROM {table} WHERE student_id = ?")
+        owned_ids.append("SELECT batch_id FROM candidates WHERE student_id = ?")
+        scopes = (student_id,) * len(owned_ids)
+        self._conn.execute(
+            f"WITH owned(id) AS ({' UNION '.join(owned_ids)}) "
+            "DELETE FROM idempotency WHERE key LIKE ? OR EXISTS ("
+            "SELECT 1 FROM json_tree(idempotency.response) AS part JOIN owned ON owned.id = part.atom)",
+            (*scopes, f'v2/"{student_id}"/%'),
+        )
+        self._conn.execute("DELETE FROM events WHERE json_extract(payload, '$.student_id') = ?", (student_id,))
         self._conn.execute("DELETE FROM students WHERE id = ?", (student_id,))
         return counts
 

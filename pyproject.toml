@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "good-student"
-version = "0.1.1"
+version = "0.1.2"
 description = "错题诊断与学习行动：Plugin + Skill + 确定性核心（M0：协议与可信底座）"
 readme = "README.md"
 requires-python = ">=3.10"

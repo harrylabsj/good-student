@@ -114,6 +114,7 @@ def stage_expert(work_dir: Path) -> Path:
     pkg = staged / "pkg"
     pkg.mkdir(exist_ok=True)
     shutil.copy2(wheel, pkg / wheel.name)
+    bundle_expert_runtime(staged, wheel)
 
     # The expert has an MCP-specific Skill. Reuse only the shared state/error
     # references so CLI instructions from the standalone connector cannot
@@ -129,6 +130,41 @@ def stage_expert(work_dir: Path) -> Path:
     )
     (staged / ".mcp.template.json").unlink()
     return staged
+
+
+def bundle_expert_runtime(staged: Path, wheel: Path) -> None:
+    """Bundle binary dependencies for the review sandbox and the build host."""
+    import platform
+
+    wheelhouse = staged / "wheelhouse"
+    constraints = staged / "runtime-constraints.txt"
+    targets = []
+    common = [sys.executable, "-m", "pip", "--disable-pip-version-check", "download",
+              "--only-binary=:all:", "--constraint", str(constraints)]
+    linux_targets = [(["Linux", "x86_64", version],
+                      ["--platform", "manylinux_2_28_x86_64", "--platform", "manylinux2014_x86_64",
+                       "--python-version", version, "--implementation", "cp"])
+                     for version in ("3.11", "3.12")]
+    host = [platform.system(), platform.machine(), f"{sys.version_info.major}.{sys.version_info.minor}"]
+    wheelhouse.mkdir()
+    with tempfile.TemporaryDirectory() as temp:
+        for index, (target, args) in enumerate([*linux_targets, (host, [])]):
+            download = Path(temp) / str(index)
+            subprocess.run([*common, *args, "--dest", str(download), f"{wheel}[mcp]"], check=True)
+            names = []
+            for dependency in sorted(download.glob("*.whl")):
+                if dependency.name == wheel.name:
+                    continue
+                with zipfile.ZipFile(dependency) as archive:
+                    _check(not any(member.split("/", 1)[0].endswith(".data") or member.endswith(".pth")
+                                   for member in archive.namelist()),
+                           f"离线 wheel 不能直接加载：{dependency.name}")
+                names.append(dependency.name)
+                shutil.copy2(dependency, wheelhouse / dependency.name)
+            targets = [entry for entry in targets if entry["target"] != target]
+            targets.append({"target": target, "wheels": names})
+    (staged / "offline-targets.json").write_text(json.dumps(targets) + "\n", encoding="utf-8")
+
 
 
 def validate_expert(source: Path) -> None:
@@ -177,7 +213,7 @@ def validate_expert(source: Path) -> None:
     server = servers["good-student"]
     _check(server.get("type") == "stdio", "内嵌 MCP 必须使用 stdio")
     _check(server.get("command") == "python3", "MCP 必须从 Python 启动包内引导脚本")
-    _check(server.get("args") == ["${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
+    _check(server.get("args") == ["-I", "${CODEBUDDY_PLUGIN_ROOT}/bin/start_mcp.py"],
            "MCP 引导脚本必须使用专家根目录变量定位")
     _check((source / "bin/start_mcp.py").is_file(), "专家包缺少 MCP 冷启动引导脚本")
     _check((source / "runtime-constraints.txt").is_file(), "专家包缺少经验证的依赖版本约束")
@@ -186,6 +222,8 @@ def validate_expert(source: Path) -> None:
 
     wheels = list((source / "pkg").glob("*.whl"))
     _check(len(wheels) == 1, "专家 pkg/ 必须有且仅有一个内置 wheel")
+    _check((source / "offline-targets.json").is_file() and any((source / "wheelhouse").glob("*.whl")),
+           "专家包缺少离线运行依赖")
     _check(not (source / "cli.json").exists(), "专家包不应携带无效的 CLI 预安装配置")
     _check((source / "skills" / "good-student" / "SKILL.md").is_file(),
            "专家包缺少内嵌 good-student Skill")
@@ -270,6 +308,8 @@ def build(output_dir: Path) -> list[Path]:
         built = []
         for source, destination in archives:
             _write_zip(source, destination)
+            if source == staged_expert:
+                _check(destination.stat().st_size < 20_000_000, "专家包超过平台 20 MB 上传限制")
             built.append(destination)
     return built
 

@@ -1,15 +1,20 @@
 """Cold-start the bundled MCP without a global good-student installation.
 
-Only stdlib is imported before creating the isolated environment. All setup
-output goes to stderr so stdin/stdout remain exclusively for MCP messages.
+Only stdlib is imported before preparing the runtime. Setup messages go to
+stderr so stdin/stdout remain exclusively for MCP messages.
 """
 
 import hashlib
+import json
 import os
+import platform
+import runpy
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
-import venv
+import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -62,7 +67,26 @@ def runtime_environment():
     return env
 
 
-def prepare_runtime(package_root: Path) -> Path:
+def unpack_offline_runtime(wheels: list[Path], destination: Path) -> None:
+    # The build verifies that these wheels install entirely into site-packages.
+    # Stage under the same parent so publishing the completed cache is atomic.
+    with tempfile.TemporaryDirectory(dir=destination.parent) as temporary:
+        site = Path(temporary) / "site"
+        site.mkdir()
+        for wheel in wheels:
+            with zipfile.ZipFile(wheel) as archive:
+                for member in archive.namelist():
+                    root = member.split("/", 1)[0]
+                    if root.endswith(".data") or member.endswith(".pth"):
+                        raise ValueError(f"离线 wheel 包含不支持的安装文件：{wheel.name}: {member}")
+                archive.extractall(site)
+        (site / ".ready").touch()
+        if destination.exists():
+            shutil.rmtree(destination)
+        site.rename(destination)
+
+
+def prepare_runtime(package_root: Path) -> tuple[Path, bool]:
     if sys.version_info < (3, 10):  # noqa: UP036 - bootstrap also runs outside the project venv
         raise RuntimeError("本地 MCP 需要 Python 3.10 或更新版本")
     wheels = list((package_root / "pkg").glob("good_student-*.whl"))
@@ -70,11 +94,31 @@ def prepare_runtime(package_root: Path) -> Path:
         raise RuntimeError("专家包缺少唯一的核心 wheel，请重新安装专家包")
     wheel = wheels[0]
     constraints = package_root / "runtime-constraints.txt"
-    digest = hashlib.sha256(wheel.read_bytes() + constraints.read_bytes()).hexdigest()[:20]
+    wheelhouse = package_root / "wheelhouse"
+    targets_path = package_root / "offline-targets.json"
+    targets = json.loads(targets_path.read_text(encoding="utf-8"))
+    target_platform = [platform.system(), platform.machine(), f"{sys.version_info.major}.{sys.version_info.minor}"]
+    offline_names = next((entry["wheels"] for entry in targets if entry["target"] == target_platform), None)
+    offline_wheels = [wheel, *(wheelhouse / name for name in offline_names)] if offline_names is not None else None
+
+    fingerprint = hashlib.sha256()
+    artifacts = [constraints, targets_path, *(offline_wheels or [wheel])]
+    for artifact in artifacts:
+        fingerprint.update(artifact.name.encode("utf-8"))
+        fingerprint.update(artifact.read_bytes())
+    digest = fingerprint.hexdigest()[:20]
     cache = Path(os.environ.get("GOOD_STUDENT_RUNTIME") or Path.home() / ".cache/good-student-mcp")
     cache.mkdir(parents=True, exist_ok=True)
     os.chmod(cache, 0o700)
     target = cache / f"{digest}-py{sys.version_info.major}{sys.version_info.minor}"
+    if offline_wheels is not None:
+        with installation_lock(cache / "bootstrap.lock"):
+            if not (target / ".ready").is_file():
+                unpack_offline_runtime(offline_wheels, target)
+        return target, True
+
+    import venv
+
     interpreter = target / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     marker = target / ".ready"
     with installation_lock(cache / "bootstrap.lock"):
@@ -92,17 +136,21 @@ def prepare_runtime(package_root: Path) -> Path:
                 check=True, env=runtime_environment(), stdout=sys.stderr, stderr=sys.stderr, timeout=20,
             )
             marker.write_text(digest, encoding="ascii")
-    return interpreter
+    return interpreter, False
 
 
 def main():
     package_root = Path(__file__).resolve().parents[1]
     try:
-        interpreter = prepare_runtime(package_root)
-    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
-        print(f"[学生错题本] MCP 启动失败：{exc}；首次连接需要网络及 Python 3.10+。", file=sys.stderr)
+        runtime, offline = prepare_runtime(package_root)
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError, zipfile.BadZipFile) as exc:
+        print(f"[学生错题本] MCP 启动失败：{exc}", file=sys.stderr)
         raise SystemExit(1) from exc
-    os.execve(str(interpreter), [str(interpreter), "-m", "good_student.mcp_server"], runtime_environment())
+    if offline:
+        sys.path.insert(0, str(runtime))
+        runpy.run_module("good_student.mcp_server", run_name="__main__", alter_sys=True)
+    else:
+        os.execve(str(runtime), [str(runtime), "-m", "good_student.mcp_server"], runtime_environment())
 
 
 if __name__ == "__main__":

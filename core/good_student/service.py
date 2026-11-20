@@ -12,6 +12,7 @@ import traceback
 import uuid
 from datetime import timedelta
 from functools import wraps
+from inspect import signature
 from pathlib import Path
 from typing import Any
 
@@ -87,6 +88,43 @@ def _canonical(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+
+def _idempotent_write(method):
+    """Serialize a keyed write and its receipt in one SQLite transaction."""
+    parameters = signature(method)
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        bound = parameters.bind(self, *args, **kwargs)
+        bound.apply_defaults()
+        supplied = bound.arguments
+        key = supplied["idempotency_key"]
+        if key is not None and not isinstance(key, str):
+            raise GoodStudentError("invalid_argument", "idempotency_key 必须为字符串")
+        if not key or (method.__name__ == "delete_student" and supplied["confirm_phrase"] is None):
+            return method(self, *args, **kwargs)
+        student = supplied.get("student_id", "")
+        key_hash = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        scoped_key = f"v2/{_canonical(student)}/{method.__name__}/{key_hash}"
+        request = {name: value for name, value in supplied.items() if name not in ("self", "idempotency_key")}
+        request_hash = hashlib.sha256(_canonical(request).encode("utf-8")).hexdigest()
+        with self.store.tx(immediate=True):
+            cached = self.store.idempotency_get(scoped_key)
+            if cached is not None:
+                if cached["request_hash"] != request_hash:
+                    raise GoodStudentError("invalid_argument", "同一个 idempotency_key 不能用于不同请求内容")
+                response = cached["receipt"]
+                response["warnings"].append("idempotent_replay")
+                return response
+            if self.store.idempotency_get(key) is not None:
+                raise GoodStudentError("invalid_argument", "该键来自旧版本，请先核对已有记录再使用新键")
+            response = method(self, *args, **kwargs)
+            if response["ok"]:
+                self.store.idempotency_put(scoped_key, {"request_hash": request_hash, "receipt": response})
+            return response
+
+    return wrapper
+
 def _content_hash(batch: dict) -> str:
     material = {
         "source_type": batch["source"]["source_type"],
@@ -132,16 +170,6 @@ class Service:
             expired = self.store.expire_candidates(now)
         return expired
 
-    def _idempotent_call(self, key: str | None, run) -> dict:
-        """同键重放返回首次结果；成功响应的落库由 run() 的实现放在其写事务内（崩溃一致）。"""
-        if key:
-            cached = self.store.idempotency_get(key)
-            if cached is not None:
-                replayed = json.loads(json.dumps(cached))
-                replayed.setdefault("warnings", []).append("idempotent_replay")
-                return replayed
-        return run()
-
     # ---- 工具实现（§16）----
 
     @_envelope
@@ -161,6 +189,7 @@ class Service:
         )
 
     @_envelope
+    @_idempotent_write
     def create_student(
         self,
         display_name: str,
@@ -172,31 +201,23 @@ class Service:
         if not isinstance(display_name, str) or not display_name.strip() or len(display_name) > 64:
             raise GoodStudentError("invalid_argument", "display_name 必须为 1-64 个字符")
 
-        def run() -> dict:
-            def _do() -> dict:
-                with self.store.tx():
-                    student = self.store.insert_student(
-                        display_name.strip(), grade, active_subjects or [], goals or []
-                    )
-                    self.store.log_event("student_created", {"student_id": student["id"]})
-                    resp = _ok(
-                        {
-                            "student": {
-                                "id": student["id"],
-                                "display_name": student["display_name"],
-                                "grade": student["grade"],
-                                "active_subjects": active_subjects or [],
-                                "goals": goals or [],
-                            }
-                        }
-                    )
-                    if idempotency_key:
-                        self.store.idempotency_put(idempotency_key, resp)
-                    return resp
-
-            return self._idempotent_call(idempotency_key, _do)
-
-        return run()
+        with self.store.tx():
+            student = self.store.insert_student(
+                display_name.strip(), grade, active_subjects or [], goals or []
+            )
+            self.store.log_event("student_created", {"student_id": student["id"]})
+            resp = _ok(
+                {
+                    "student": {
+                        "id": student["id"],
+                        "display_name": student["display_name"],
+                        "grade": student["grade"],
+                        "active_subjects": active_subjects or [],
+                        "goals": goals or [],
+                    }
+                }
+            )
+            return resp
 
     @_envelope
     def list_students(self) -> dict:
@@ -217,6 +238,7 @@ class Service:
         )
 
     @_envelope
+    @_idempotent_write
     def record_scores(
         self,
         student_id: str,
@@ -330,18 +352,13 @@ class Service:
                 }
             )
 
-        def _do() -> dict:
-            with self.store.tx():
-                inserted = [self.store.insert_score_record(record) for record in normalized]
-                self.store.log_event(
-                    "scores_recorded", {"student_id": student_id, "count": len(inserted)}
-                )
-                resp = _ok({"student_id": student_id, "records": inserted})
-                if idempotency_key:
-                    self.store.idempotency_put(idempotency_key, resp)
-                return resp
-
-        return self._idempotent_call(idempotency_key, _do)
+        with self.store.tx():
+            inserted = [self.store.insert_score_record(record) for record in normalized]
+            self.store.log_event(
+                "scores_recorded", {"student_id": student_id, "count": len(inserted)}
+            )
+            resp = _ok({"student_id": student_id, "records": inserted})
+            return resp
 
     @_envelope
     def list_scores(
@@ -396,6 +413,7 @@ class Service:
         )
 
     @_envelope
+    @_idempotent_write
     def ingest_candidates(
         self,
         student_id: str,
@@ -414,7 +432,7 @@ class Service:
         if captured_at is not None:
             try:
                 captured_at = clock.to_utc_iso(captured_at)
-            except ValueError as exc:
+            except (TypeError, ValueError) as exc:
                 raise GoodStudentError("invalid_argument", f"captured_at 不是合法时间：{exc}") from exc
         if not isinstance(ttl_hours, int) or isinstance(ttl_hours, bool) or not 1 <= ttl_hours <= 24 * 365:
             raise GoodStudentError(
@@ -424,55 +442,50 @@ class Service:
         content_hash = _content_hash(batch)
         now = clock.iso()
 
-        def _do() -> dict:
-            existing = self.store.find_source_by_hash(student_id, content_hash)
-            if existing:
-                return self._duplicate_response(student_id, batch, content_hash, idempotency_key)
-            try:
-                with self.store.tx():
-                    source = self.store.insert_source(
-                        student_id,
-                        batch["source"]["source_type"],
-                        host,
-                        batch["source"]["source_ref"],
-                        content_hash,
-                        batch["source"].get("page_count"),
-                        captured_at,
-                        now,
-                    )
-                    batch_id = str(uuid.uuid4())
-                    expires_at = clock.iso(clock.utcnow() + timedelta(hours=ttl_hours))
-                    inserted = [
-                        self.store.insert_candidate(batch_id, student_id, source["id"], q, expires_at)
-                        for q in batch["questions"]
-                    ]
-                    self.store.log_event(
-                        "candidates_ingested",
-                        {"student_id": student_id, "batch_id": batch_id, "count": len(inserted)},
-                    )
-                    resp = _ok(
-                        {
-                            "duplicate": False,
-                            "batch_id": batch_id,
-                            "source_id": source["id"],
-                            "candidate_count": len(inserted),
-                            "expires_at": expires_at,
-                            "pending": [self._pending_view(c) for c in inserted],
-                        },
-                        warnings=warnings or None,
-                    )
-                    if idempotency_key:
-                        self.store.idempotency_put(idempotency_key, resp)
-                    return resp
-            except sqlite3.IntegrityError:
-                # 并发导入同一材料撞 (student_id, content_hash) 唯一索引：
-                # 胜者事务已提交，本事务已回滚，转入重复分支返回既有批次视图。
-                return self._duplicate_response(student_id, batch, content_hash, idempotency_key)
-
-        return self._idempotent_call(idempotency_key, _do)
+        existing = self.store.find_source_by_hash(student_id, content_hash)
+        if existing:
+            return self._duplicate_response(student_id, batch, content_hash)
+        try:
+            with self.store.tx():
+                source = self.store.insert_source(
+                    student_id,
+                    batch["source"]["source_type"],
+                    host,
+                    batch["source"]["source_ref"],
+                    content_hash,
+                    batch["source"].get("page_count"),
+                    captured_at,
+                    now,
+                )
+                batch_id = str(uuid.uuid4())
+                expires_at = clock.iso(clock.utcnow() + timedelta(hours=ttl_hours))
+                inserted = [
+                    self.store.insert_candidate(batch_id, student_id, source["id"], q, expires_at)
+                    for q in batch["questions"]
+                ]
+                self.store.log_event(
+                    "candidates_ingested",
+                    {"student_id": student_id, "batch_id": batch_id, "count": len(inserted)},
+                )
+                resp = _ok(
+                    {
+                        "duplicate": False,
+                        "batch_id": batch_id,
+                        "source_id": source["id"],
+                        "candidate_count": len(inserted),
+                        "expires_at": expires_at,
+                        "pending": [self._pending_view(c) for c in inserted],
+                    },
+                    warnings=warnings or None,
+                )
+                return resp
+        except sqlite3.IntegrityError:
+            # 并发导入同一材料撞 (student_id, content_hash) 唯一索引：
+            # 胜者事务已提交，本事务已回滚，转入重复分支返回既有批次视图。
+            return self._duplicate_response(student_id, batch, content_hash)
 
     def _duplicate_response(
-        self, student_id: str, batch: dict, content_hash: str, idempotency_key: str | None
+        self, student_id: str, batch: dict, content_hash: str
     ) -> dict:
         existing = self.store.find_source_by_hash(student_id, content_hash)
         if not existing:
@@ -501,9 +514,6 @@ class Service:
             },
             warnings=["duplicate_material: 该材料已导入过，可直接继续确认，未重复写入"],
         )
-        if idempotency_key:
-            with self.store.tx():
-                self.store.idempotency_put(idempotency_key, resp)
         return resp
 
     def _pending_view(self, candidate: dict) -> dict:
@@ -551,6 +561,7 @@ class Service:
         )
 
     @_envelope
+    @_idempotent_write
     def confirm_questions(
         self, student_id: str, items: list[dict], idempotency_key: str | None = None
     ) -> dict:
@@ -567,7 +578,7 @@ class Service:
             failed.append({"index": index, "code": code, "message": message})
 
         for index, item in enumerate(items):
-            if not isinstance(item, dict) or "candidate_id" not in item:
+            if not isinstance(item, dict) or not isinstance(item.get("candidate_id"), str) or not item["candidate_id"]:
                 fail(index, "invalid_argument", f"items[{index}] 缺少 candidate_id")
                 continue
             action = item.get("action", "confirm")
@@ -618,11 +629,11 @@ class Service:
             error_reason = edits.get("error_reason") or next(
                 (r.get("code") for r in payload.get("error_reason_candidates") or []), "unknown"
             )
-            if error_reason not in ERROR_REASON_LABELS:
+            if not isinstance(error_reason, str) or error_reason not in ERROR_REASON_LABELS:
                 fail(index, "invalid_argument", f"未知错因代码：{error_reason}")
                 continue
             correction_status = edits.get("correction_status", "uncorrected")
-            if correction_status not in CORRECTION_STATUSES:
+            if not isinstance(correction_status, str) or correction_status not in CORRECTION_STATUSES:
                 fail(index, "invalid_argument", f"correction_status 必须为 {sorted(CORRECTION_STATUSES)}")
                 continue
             source = self.store.get_source(candidate["source_id"])
@@ -673,46 +684,41 @@ class Service:
                 }
             )
 
-        def _do() -> dict:
-            with self.store.tx():
-                now = clock.iso()
-                for step in plan:
-                    candidate_id = step["candidate"]["id"]
-                    index = step["index"]
-                    # 计划构建与事务应用之间存在并发窗口（WAL 下快照读可能过期），
-                    # 状态推进必须用条件 UPDATE 兜底：只有一个事务能赢得确认/拒绝。
-                    if step["kind"] == "reject":
-                        won = self.store.transition_candidate(candidate_id, CandidateStatus.REJECTED, now)
-                    else:
-                        won = self.store.transition_candidate(candidate_id, CandidateStatus.CONFIRMED, now)
-                    if not won:
-                        failed.append(self._classify_transition_failure(candidate_id, index, now))
-                        continue
-                    if step["kind"] == "reject":
-                        applied.append({"candidate_id": candidate_id, "action": "rejected"})
-                        continue
-                    attempt = self.store.insert_attempt(step["attempt"])
-                    for label in step["labels"]:
-                        kc, _created = self.store.resolve_kc(attempt["subject_id"], label)
-                        self.store.insert_attempt_kc(attempt["id"], kc["id"], step["kc_source"])
-                    entry = {
-                        "candidate_id": candidate_id,
-                        "action": "confirmed",
-                        "attempt_id": attempt["id"],
-                    }
-                    if not step["labels"]:
-                        entry["warnings"] = ["未关联知识点，请补充 edits.knowledge_labels 后才能进入分析"]
-                    applied.append(entry)
-                self.store.log_event(
-                    "questions_confirmed",
-                    {"student_id": student_id, "applied": len(applied), "failed": len(failed)},
-                )
-                resp = _ok({"applied": applied, "failed": failed})
-                if idempotency_key:
-                    self.store.idempotency_put(idempotency_key, resp)
-                return resp
-
-        return self._idempotent_call(idempotency_key, _do)
+        with self.store.tx():
+            now = clock.iso()
+            for step in plan:
+                candidate_id = step["candidate"]["id"]
+                index = step["index"]
+                # 计划构建与事务应用之间存在并发窗口（WAL 下快照读可能过期），
+                # 状态推进必须用条件 UPDATE 兜底：只有一个事务能赢得确认/拒绝。
+                if step["kind"] == "reject":
+                    won = self.store.transition_candidate(candidate_id, CandidateStatus.REJECTED, now)
+                else:
+                    won = self.store.transition_candidate(candidate_id, CandidateStatus.CONFIRMED, now)
+                if not won:
+                    failed.append(self._classify_transition_failure(candidate_id, index, now))
+                    continue
+                if step["kind"] == "reject":
+                    applied.append({"candidate_id": candidate_id, "action": "rejected"})
+                    continue
+                attempt = self.store.insert_attempt(step["attempt"])
+                for label in step["labels"]:
+                    kc, _created = self.store.resolve_kc(attempt["subject_id"], label)
+                    self.store.insert_attempt_kc(attempt["id"], kc["id"], step["kc_source"])
+                entry = {
+                    "candidate_id": candidate_id,
+                    "action": "confirmed",
+                    "attempt_id": attempt["id"],
+                }
+                if not step["labels"]:
+                    entry["warnings"] = ["未关联知识点，请补充 edits.knowledge_labels 后才能进入分析"]
+                applied.append(entry)
+            self.store.log_event(
+                "questions_confirmed",
+                {"student_id": student_id, "applied": len(applied), "failed": len(failed)},
+            )
+            resp = _ok({"applied": applied, "failed": failed})
+            return resp
 
     def _classify_transition_failure(self, candidate_id: str, index: int, now: str) -> dict:
         """条件状态推进失败后重读现状，给出可操作的失败原因。"""
@@ -747,49 +753,45 @@ class Service:
         return _ok(result, warnings=warnings or None)
 
     @_envelope
+    @_idempotent_write
     def create_plan(self, student_id: str, idempotency_key: str | None = None, now: str | None = None) -> dict:
         _require_student(self.store, student_id)
         result, _ = analysis.analyze_student(self.store, student_id, _normalized_now(now))
         reason_by_kc = self._dominant_reasons(student_id)
 
-        def _do() -> dict:
-            actions, skipped = recommendations.build_actions(result, reason_by_kc, now=now)
-            with self.store.tx():
-                rows = [
-                    self.store.insert_action(
-                        {
-                            "student_id": student_id,
-                            "kc_id": action.pop("kc_id"),
-                            "error_reason": action["error_reason"],
-                            "why": action["why"],
-                            "action": action["action"],
-                            "duration_minutes": action["duration_minutes"],
-                            "question_count": action["question_count"],
-                            "due_date": action["due_date"],
-                            "acceptance_criteria": action["acceptance_criteria"],
-                            "next_step_if_fail": action["next_step_if_fail"],
-                            "reassessment_method": action["reassessment_method"],
-                            "review_schedule": action.get("review_schedule", []),
-                            "status": "active",
-                        }
-                    )
-                    for action in actions
-                ]
-                self.store.log_event("plan_created", {"student_id": student_id, "actions": len(rows)})
-                resp = _ok(
+        actions, skipped = recommendations.build_actions(result, reason_by_kc, now=now)
+        with self.store.tx():
+            rows = [
+                self.store.insert_action(
                     {
-                        "actions": [
-                            {**a, "kc_id": r["kc_id"], "id": r["id"], "status": r["status"]}
-                            for a, r in zip(actions, rows, strict=False)
-                        ],
-                        "skipped": skipped,
+                        "student_id": student_id,
+                        "kc_id": action.pop("kc_id"),
+                        "error_reason": action["error_reason"],
+                        "why": action["why"],
+                        "action": action["action"],
+                        "duration_minutes": action["duration_minutes"],
+                        "question_count": action["question_count"],
+                        "due_date": action["due_date"],
+                        "acceptance_criteria": action["acceptance_criteria"],
+                        "next_step_if_fail": action["next_step_if_fail"],
+                        "reassessment_method": action["reassessment_method"],
+                        "review_schedule": action.get("review_schedule", []),
+                        "status": "active",
                     }
                 )
-                if idempotency_key:
-                    self.store.idempotency_put(idempotency_key, resp)
-                return resp
-
-        return self._idempotent_call(idempotency_key, _do)
+                for action in actions
+            ]
+            self.store.log_event("plan_created", {"student_id": student_id, "actions": len(rows)})
+            resp = _ok(
+                {
+                    "actions": [
+                        {**a, "kc_id": r["kc_id"], "id": r["id"], "status": r["status"]}
+                        for a, r in zip(actions, rows, strict=False)
+                    ],
+                    "skipped": skipped,
+                }
+            )
+            return resp
 
     def _dominant_reasons(self, student_id: str) -> dict[str, str]:
         counts: dict[str, dict[str, int]] = {}
@@ -807,6 +809,7 @@ class Service:
         }
 
     @_envelope
+    @_idempotent_write
     def record_reassessment(
         self,
         student_id: str,
@@ -823,8 +826,10 @@ class Service:
         now: str | None = None,
     ) -> dict:
         _require_student(self.store, student_id)
-        if not isinstance(correct_count, int) or not isinstance(total_count, int) or total_count < 1:
+        if type(correct_count) is not int or type(total_count) is not int or total_count < 1:
             raise GoodStudentError("invalid_argument", "correct_count/total_count 必须为整数且 total_count ≥ 1")
+        if not isinstance(is_new_variant, bool) or not isinstance(no_hints, bool):
+            raise GoodStudentError("invalid_argument", "is_new_variant/no_hints 必须为布尔值")
         if not 0 <= correct_count <= total_count:
             raise GoodStudentError("invalid_argument", "correct_count 必须在 0 与 total_count 之间")
         if self_reported_confidence is not None and (
@@ -843,65 +848,61 @@ class Service:
             action = self.store.get_action(action_id)
             if not action or action["student_id"] != student_id:
                 raise GoodStudentError("not_found", f"学习动作不存在：{action_id}")
+            if action["kc_id"] != kc_id:
+                raise GoodStudentError("invalid_argument", "学习动作与复测知识点不一致")
         try:
-            completed = clock.to_utc_iso(completed_at) if completed_at else _normalized_now(now)
+            analysis_now = _normalized_now(now)
+            completed = clock.to_utc_iso(completed_at) if completed_at is not None else analysis_now
         except (TypeError, ValueError) as exc:
             raise GoodStudentError("invalid_argument", f"completed_at 不是合法时间：{exc}") from exc
 
-        def _do() -> dict:
-            with self.store.tx():
-                reassessment = self.store.insert_reassessment(
-                    {
-                        "student_id": student_id,
-                        "kc_id": kc_id,
-                        "action_id": action_id,
-                        "is_new_variant": int(is_new_variant),
-                        "no_hints": int(no_hints),
-                        "correct_count": correct_count,
-                        "total_count": total_count,
-                        "accuracy": round(correct_count / total_count, 3),
-                        "time_seconds": time_seconds,
-                        "self_reported_confidence": self_reported_confidence,
-                        "completed_at": completed,
-                    }
-                )
-                self.store.log_event(
-                    "reassessment_recorded", {"student_id": student_id, "kc_id": kc_id}
-                )
-            result, _ = analysis.analyze_student(self.store, student_id, now)
-            with self.store.tx():
-                self.store.replace_snapshots(student_id, analysis.snapshot_rows(student_id, result))
-            weakness = next(
-                (
-                    w
-                    for w in result["weaknesses"]
-                    if w["knowledge_component"]["id"] == kc_id
-                ),
-                None,
-            )
-            resp = _ok(
+        with self.store.tx():
+            reassessment = self.store.insert_reassessment(
                 {
-                    "reassessment": {
-                        "id": reassessment["id"],
-                        "kc_id": kc_id,
-                        "action_id": action_id,
-                        "correct_count": correct_count,
-                        "total_count": total_count,
-                        "accuracy": reassessment["accuracy"],
-                        "is_new_variant": is_new_variant,
-                        "no_hints": no_hints,
-                        "completed_at": completed,
-                    },
-                    "passed": correct_count / total_count >= PASS_ACCURACY_THRESHOLD,
-                    "updated_weakness": weakness,
+                    "student_id": student_id,
+                    "kc_id": kc_id,
+                    "action_id": action_id,
+                    "is_new_variant": int(is_new_variant),
+                    "no_hints": int(no_hints),
+                    "correct_count": correct_count,
+                    "total_count": total_count,
+                    "accuracy": round(correct_count / total_count, 3),
+                    "time_seconds": time_seconds,
+                    "self_reported_confidence": self_reported_confidence,
+                    "completed_at": completed,
                 }
             )
-            if idempotency_key:
-                with self.store.tx():
-                    self.store.idempotency_put(idempotency_key, resp)
-            return resp
-
-        return self._idempotent_call(idempotency_key, _do)
+            self.store.log_event(
+                "reassessment_recorded", {"student_id": student_id, "kc_id": kc_id}
+            )
+            result, _ = analysis.analyze_student(self.store, student_id, analysis_now)
+            self.store.replace_snapshots(student_id, analysis.snapshot_rows(student_id, result))
+        weakness = next(
+            (
+                w
+                for w in result["weaknesses"]
+                if w["knowledge_component"]["id"] == kc_id
+            ),
+            None,
+        )
+        resp = _ok(
+            {
+                "reassessment": {
+                    "id": reassessment["id"],
+                    "kc_id": kc_id,
+                    "action_id": action_id,
+                    "correct_count": correct_count,
+                    "total_count": total_count,
+                    "accuracy": reassessment["accuracy"],
+                    "is_new_variant": is_new_variant,
+                    "no_hints": no_hints,
+                    "completed_at": completed,
+                },
+                "passed": correct_count / total_count >= PASS_ACCURACY_THRESHOLD,
+                "updated_weakness": weakness,
+            }
+        )
+        return resp
 
     @_envelope
     def weekly_brief(self, student_id: str, now: str | None = None) -> dict:
@@ -1081,6 +1082,7 @@ class Service:
         )
 
     @_envelope
+    @_idempotent_write
     def delete_student(
         self, student_id: str, confirm_phrase: str | None = None, idempotency_key: str | None = None
     ) -> dict:
@@ -1105,17 +1107,10 @@ class Service:
                 "confirm_phrase 与学生显示名不一致，已拒绝删除（数据未变动）",
             )
 
-        def _do() -> dict:
-            with self.store.tx():
-                self.store.log_event("student_deleted", {"student_id": student_id})
-                removed = self.store.delete_student(student_id)
-            resp = _ok({"deleted": True, "student_id": student_id, "removed": removed})
-            if idempotency_key:
-                with self.store.tx():
-                    self.store.idempotency_put(idempotency_key, resp)
-            return resp
-
-        return self._idempotent_call(idempotency_key, _do)
+        with self.store.tx():
+            removed = self.store.delete_student(student_id)
+        resp = _ok({"deleted": True, "student_id": student_id, "removed": removed})
+        return resp
 
     @_envelope
     def migrate_legacy(self, legacy_path: str | Path, dry_run: bool = False) -> dict:

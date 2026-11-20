@@ -235,3 +235,17 @@ def test_ingest_ttl_hours_out_of_range_rejected(service):
     resp2 = service.ingest_candidates(student, make_batch([make_question(locator="q2")]), ttl_hours=24 * 365 + 1)
     assert resp2["ok"] is False
     assert resp2["error"]["code"] == "invalid_argument"
+
+
+def test_bad_confirmation_item_does_not_block_valid_item(service):
+    student = make_student(service)
+    batch = make_batch([make_question()])
+    candidate = service.ingest_candidates(student, batch)["data"]["pending"][0]["candidate_id"]
+    result = service.confirm_questions(student, [
+        {"candidate_id": []},
+        {"candidate_id": candidate, "edits": {"error_reason": ["unknown"]}},
+        {"candidate_id": candidate},
+    ])
+    assert result["ok"]
+    assert [entry["index"] for entry in result["data"]["failed"]] == [0, 1]
+    assert result["data"]["applied"][0]["candidate_id"] == candidate

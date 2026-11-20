@@ -105,12 +105,66 @@ def test_idempotency_records_pruned_after_ttl(service):
     service.ingest_candidates(student, make_batch([make_question()]), idempotency_key="old-key")
     with service.store.tx():
         service.store._conn.execute(
-            "UPDATE idempotency SET created_at = ? WHERE key = 'old-key'",
+            "UPDATE idempotency SET created_at = ?",
             (clock.add_days(clock.iso(), -(IDEMPOTENCY_TTL_DAYS + 1)),),
         )
     service.ingest_candidates(
         student, make_batch([make_question(locator="p1-q2")]), idempotency_key="new-key"
     )
-    keys = {r["key"] for r in service.store._conn.execute("SELECT key FROM idempotency").fetchall()}
-    assert "old-key" not in keys
-    assert "new-key" in keys
+    count = service.store._conn.execute("SELECT count(*) FROM idempotency").fetchone()[0]
+    assert count == 1
+
+
+def test_same_retry_key_is_scoped_to_student_and_operation(service):
+    student_a = make_student(service)
+    student_b = make_student(service)
+    batch = make_batch([make_question()])
+    a = service.ingest_candidates(student_a, batch, idempotency_key="retry")
+    b = service.ingest_candidates(student_b, batch, idempotency_key="retry")
+    assert a["data"]["batch_id"] != b["data"]["batch_id"]
+    candidate = b["data"]["pending"][0]["candidate_id"]
+    result = service.confirm_questions(student_b, [{"candidate_id": candidate}], idempotency_key="retry")
+    assert result["data"]["applied"][0]["candidate_id"] == candidate
+
+
+def test_student_deletion_removes_new_and_legacy_receipts(service):
+    student_a = make_student(service)
+    student_b = make_student(service)
+    batch = make_batch([make_question()])
+    a = service.ingest_candidates(student_a, batch, idempotency_key="a")
+    b = service.ingest_candidates(student_b, batch, idempotency_key="b")
+    with service.store.tx():
+        service.store.idempotency_put("legacy-a", a)
+        service.store.idempotency_put("legacy-b", b)
+    assert service.delete_student(student_a, confirm_phrase="小明")["ok"]
+    receipts = [row["response"] for row in service.store._conn.execute("SELECT response FROM idempotency")]
+    assert len(receipts) == 2
+    assert all(b["data"]["batch_id"] in receipt for receipt in receipts)
+
+
+def test_reused_key_rejects_different_content(service):
+    student = make_student(service)
+    assert service.ingest_candidates(
+        student, make_batch([make_question()]), idempotency_key="retry"
+    )["ok"]
+    changed = service.ingest_candidates(
+        student, make_batch([make_question(locator="p1-q2")]), idempotency_key="retry"
+    )
+    assert changed["error"]["code"] == "invalid_argument"
+    assert len(service.list_pending(student)["data"]["pending"]) == 1
+
+
+def test_concurrent_same_key_creates_one_student(service):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    start = Barrier(2)
+
+    def create():
+        start.wait(timeout=5)
+        return service.create_student("并发重试", idempotency_key="create-once")
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _: create(), range(2)))
+    assert len({result["data"]["student"]["id"] for result in results}) == 1
+    assert len(service.list_students()["data"]["students"]) == 1
