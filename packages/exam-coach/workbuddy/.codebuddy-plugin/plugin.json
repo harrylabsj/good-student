@@ -1,0 +1,30 @@
+{
+  "name": "exam-gap-coach",
+  "version": "0.1.0",
+  "description": "High-school exam practice from confirmed wrong questions and verified original exam sources.",
+  "author": {"name": "海纳", "email": "1711496337@qq.com"},
+  "agents": ["./agents/exam-gap-coach.md"],
+  "skills": ["./skills/exam-coach"],
+  "expertType": "agent",
+  "agentName": "exam-gap-coach",
+  "displayName": {"zh": "海纳-教育专家", "en": "Haina Education Expert"},
+  "profession": {"zh": "真题查漏教练", "en": "Exam Gap Coach"},
+  "displayDescription": {
+    "zh": "拍照识别高中数学、英语和物理错题，确认后归档薄弱考点，再用有原卷出处的未见真题练习与复测。",
+    "en": "Confirm wrong answers from photos, track weak high-school topics, and retest with traceable original exam questions."
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "15-Education",
+  "plugin": "exam-gap-coach",
+  "defaultInitPrompt": {"zh": "我想拍照整理高中错题，并用同考点真题复测", "en": "Sort my high-school mistakes from photos and retest with original exam questions"},
+  "quickPrompts": [
+    {"zh": "我想拍照整理高中错题，并用同考点真题复测", "en": "Sort my high-school mistakes from photos and retest with original exam questions"},
+    {"zh": "给我三道牛顿运动定律真题，先别显示答案", "en": "Find three original Newton's laws exam questions without showing answers"},
+    {"zh": "看看我最近英语阅读理解的薄弱点", "en": "Show recent weak spots in my English reading"}
+  ],
+  "tags": [
+    {"zh": "拍照错题", "en": "Photo Intake"},
+    {"zh": "高中真题", "en": "Original Exams"},
+    {"zh": "考点复测", "en": "Topic Retesting"}
+  ]
+}

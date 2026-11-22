@@ -1,0 +1,464 @@
+{
+  "schema_version": 1,
+  "questions": [
+    {
+      "id": "math-2025-i-02",
+      "subject": "数学",
+      "topics": [
+        "math-sets"
+      ],
+      "min_grade": 10,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "2",
+        "paper_url": "https://gaokao.eol.cn/shiti/sx/202506/t20250607_2673303.shtml",
+        "answer_url": "https://zy.21cnjy.com/23367579",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "C"
+      ]
+    },
+    {
+      "id": "math-2025-ii-03",
+      "subject": "数学",
+      "topics": [
+        "math-sets"
+      ],
+      "min_grade": 10,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国二卷",
+        "number": "3",
+        "paper_url": "https://gaokao.eol.cn/shiti/sx/202506/t20250608_2673332.shtml",
+        "answer_url": "https://zy.21cnjy.com/23367579",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "D"
+      ]
+    },
+    {
+      "id": "math-2024-i-01",
+      "subject": "数学",
+      "topics": [
+        "math-sets"
+      ],
+      "min_grade": 10,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2024,
+        "region": "全国",
+        "paper": "新课标Ⅰ卷",
+        "number": "1",
+        "paper_url": "https://img.gaokaozhitongche.com/resource/pdf/paper/202510/20251023032537_dVc9B5.pdf",
+        "answer_url": "https://zy.21cnjy.com/23367579",
+        "publisher": "高考直通车",
+        "page": 1
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "A"
+      ]
+    },
+    {
+      "id": "english-2025-i-56",
+      "subject": "英语",
+      "topics": [
+        "english-clause"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "56",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "which"
+      ]
+    },
+    {
+      "id": "english-2025-i-58",
+      "subject": "英语",
+      "topics": [
+        "english-nonfinite"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "58",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "to present"
+      ]
+    },
+    {
+      "id": "english-2025-i-59",
+      "subject": "英语",
+      "topics": [
+        "english-formation"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "59",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "guidance"
+      ]
+    },
+    {
+      "id": "english-2025-i-60",
+      "subject": "英语",
+      "topics": [
+        "english-tense"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "60",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "are revealed"
+      ]
+    },
+    {
+      "id": "english-2025-i-61",
+      "subject": "英语",
+      "topics": [
+        "english-tense"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "61",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "tries"
+      ]
+    },
+    {
+      "id": "english-2025-i-63",
+      "subject": "英语",
+      "topics": [
+        "english-formation"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "63",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "strategic"
+      ]
+    },
+    {
+      "id": "english-2025-i-65",
+      "subject": "英语",
+      "topics": [
+        "english-formation"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高等学校招生全国统一考试",
+        "year": 2025,
+        "region": "全国",
+        "paper": "全国一卷",
+        "number": "65",
+        "paper_url": "https://gaokao.eol.cn/shiti/yy/202506/t20250612_2674288.shtml",
+        "answer_url": "https://zy.21cnjy.com/23168472",
+        "publisher": "中国教育在线"
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "digitally"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-1",
+      "subject": "物理",
+      "topics": [
+        "physics-wave"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "1",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 1
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "C"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-2",
+      "subject": "物理",
+      "topics": [
+        "physics-magnetic"
+      ],
+      "min_grade": 11,
+      "difficulty": "中等",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "2",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 1
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "B"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-3",
+      "subject": "物理",
+      "topics": [
+        "physics-atomic"
+      ],
+      "min_grade": 11,
+      "difficulty": "基础",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "3",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 1
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "B"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-5",
+      "subject": "物理",
+      "topics": [
+        "physics-gravity"
+      ],
+      "min_grade": 10,
+      "difficulty": "中等",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "5",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 2
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "D"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-7",
+      "subject": "物理",
+      "topics": [
+        "physics-momentum"
+      ],
+      "min_grade": 11,
+      "difficulty": "较难",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "7",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 3
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "A"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-9",
+      "subject": "物理",
+      "topics": [
+        "physics-magnetic"
+      ],
+      "min_grade": 11,
+      "difficulty": "中等",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "9",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 4
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "BD"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-10",
+      "subject": "物理",
+      "topics": [
+        "physics-momentum"
+      ],
+      "min_grade": 11,
+      "difficulty": "中等",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "10",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 4
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "choice",
+      "answers": [
+        "AB"
+      ]
+    },
+    {
+      "id": "physics-2025-gd-11-2-4",
+      "subject": "物理",
+      "topics": [
+        "physics-momentum"
+      ],
+      "min_grade": 11,
+      "difficulty": "中等",
+      "source": {
+        "exam": "普通高中学业水平选择性考试",
+        "year": 2025,
+        "region": "广东",
+        "paper": "广东卷",
+        "number": "11(2)④",
+        "paper_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题.pdf",
+        "answer_url": "https://www.woaigaokao.com/wp-content/uploads/2025/10/2025年高考广东卷物理真题答案.pdf",
+        "publisher": "我爱高考（原卷转录）",
+        "page": 5
+      },
+      "reviewed_by": "开发样例：核对卷别、题号与公开参考答案",
+      "use": "link_only",
+      "kind": "exact",
+      "answers": [
+        "0.56"
+      ]
+    }
+  ]
+}

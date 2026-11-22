@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exam-gap-coach"
+version = "0.1.0"
+description = "Account-isolated WorkBuddy exam gap coach"
+requires-python = ">=3.10"
+dependencies = ["mcp==2.0.0", "pydantic>=2.12,<3", "PyJWT[crypto]>=2.10,<3", "uvicorn>=0.31,<1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx2>=2.5"]
+
+[project.scripts]
+exam-gap-coach = "exam_coach.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+exam_coach = ["*.json"]
